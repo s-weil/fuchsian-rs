@@ -1,13 +1,20 @@
-use crate::algebraic_extensions::{AddIdentity, MulIdentity, Numeric, NumericAddIdentity};
+use crate::algebraic_extensions::{
+    AddIdentity, MulIdentity, Numeric, NumericAddIdentity, NumericMulIdentity,
+};
 use std::{
     fmt,
-    ops::{Add, Mul, Neg, Sub},
+    ops::{Add, Div, Mul, Neg, Sub},
 };
+
+// TODO: consider https://docs.rs/katex-doc/latest/katex_doc/ or
+//  https://crates.io/crates/rust-latex-doc-minimal-example for math formulas
 
 /// https://en.wikipedia.org/wiki/M%C3%B6bius_transformation
 /// Corresponds to the matrix-vector multiplication of the matrix
-/// [a, b; c, d] * [x; y]
-/// for [x, y] in the (real) Euclidean vector space.
+/// $[a, b; c, d] * [x; y]$
+/// for $[x; y]$ in the (real) Euclidean vector space.
+/// Corresponds to the complex-valued function
+/// $z complex -> f(z) = \frac{a*z + b}{cz + d}$
 pub struct MoebiusTransformation<T> {
     a: T,
     b: T,
@@ -40,6 +47,23 @@ impl<T> MoebiusTransformation<T> {
         T: Numeric + NumericAddIdentity + std::marker::Copy,
     {
         !self.determinant().is_zero(threshold)
+    }
+
+    pub fn inverse(&self, threshold: Option<f64>) -> Option<Self>
+    where
+        T: Numeric + NumericAddIdentity + std::marker::Copy + Div<Output = T>,
+    {
+        if self.is_invertible(threshold) {
+            // TODO: could calc the determinant only once (already done in is_invertible)
+            let det = self.determinant();
+            return Some(Self {
+                a: self.d / det,
+                b: -self.b / det,
+                c: -self.c / det,
+                d: self.a / det,
+            });
+        }
+        None
     }
 }
 
@@ -94,6 +118,18 @@ where
     }
 }
 
+impl<T> NumericAddIdentity for MoebiusTransformation<T>
+where
+    T: NumericAddIdentity,
+{
+    fn is_zero(&self, threshold: Option<f64>) -> bool {
+        self.a.is_zero(threshold)
+            && self.b.is_zero(threshold)
+            && self.c.is_zero(threshold)
+            && self.d.is_zero(threshold)
+    }
+}
+
 /// Corresponds to the matrix [1, 0; 0, 1]
 impl<T> MulIdentity for MoebiusTransformation<T>
 where
@@ -101,6 +137,18 @@ where
 {
     fn one() -> Self {
         MoebiusTransformation::new(T::one(), T::zero(), T::zero(), T::one())
+    }
+}
+
+impl<T> NumericMulIdentity for MoebiusTransformation<T>
+where
+    T: NumericMulIdentity + NumericAddIdentity,
+{
+    fn is_one(&self, threshold: Option<f64>) -> bool {
+        self.a.is_one(threshold)
+            && self.b.is_zero(threshold)
+            && self.c.is_zero(threshold)
+            && self.d.is_one(threshold)
     }
 }
 
@@ -189,7 +237,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::MoebiusTransformation;
-    use crate::algebraic_extensions::{AddIdentity, MulIdentity};
+    use crate::algebraic_extensions::{AddIdentity, MulIdentity, NumericMulIdentity};
 
     #[test]
     fn test_is_invertible() {
@@ -268,5 +316,53 @@ mod tests {
             MoebiusTransformation::<f32>::new(2.2, 3.4, -1.2, 0.5) * 2.0
                 == MoebiusTransformation::<f32>::new(4.4, 6.8, -2.4, 1.0)
         );
+    }
+
+    #[test]
+    fn test_preserve_determinant() {
+        let m1 = MoebiusTransformation::<i8>::new(1, 4, 0, -1);
+        assert_eq!(m1.determinant(), -1);
+        assert_eq!((m1 * m1).determinant(), 1);
+
+        let m2 = MoebiusTransformation::<i8>::new(1, 4, -2, -1);
+        assert_eq!(m2.determinant(), 7);
+        assert_eq!((m2 * m2).determinant(), 49);
+        assert_eq!((m1 * m2).determinant(), m1.determinant() * m2.determinant());
+        assert_eq!((m1 * m2).determinant(), -7);
+    }
+
+    #[test]
+    fn test_inverse() {
+        let m = MoebiusTransformation::<i8>::new(1, 1, 0, 0);
+        assert_eq!(m.determinant(), 0);
+        assert!(m.inverse(None).is_none());
+
+        let m = MoebiusTransformation::<f32>::new(1.1, 2.0, -0.5, 3.0);
+        assert_eq!(m.determinant(), 4.3);
+        assert!(m.inverse(None).is_some());
+        assert_eq!(
+            m.inverse(None).unwrap().determinant(),
+            1.0 / m.determinant()
+        );
+
+        assert!(m * m.inverse(None).unwrap() == MoebiusTransformation::<f32>::one());
+        assert!(m.inverse(None).unwrap() * m == MoebiusTransformation::<f32>::one());
+
+        // numerical check
+        let m = MoebiusTransformation::<f32>::new(
+            1.100000000002,
+            2.000000000007,
+            0.000000000005,
+            3.000000000001,
+        );
+        assert!(m.inverse(None).is_some());
+        assert_eq!(
+            m.inverse(None).unwrap().determinant(),
+            1.0 / m.determinant()
+        );
+
+        let numerical_one = m * m.inverse(None).unwrap();
+        assert!(numerical_one.is_one(Some(1e-7)));
+        assert!(!numerical_one.is_one(Some(1e-8)));
     }
 }

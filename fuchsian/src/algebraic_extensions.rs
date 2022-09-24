@@ -15,9 +15,23 @@ pub trait NumericAddIdentity: AddIdentity {
     fn is_zero(&self, threshold: Option<f64>) -> bool;
 }
 
-pub trait MulIdentity {
+pub trait MulIdentity: Sized {
     fn one() -> Self;
 }
+
+pub trait NumericMulIdentity: MulIdentity {
+    /// For numerical reasons
+    fn is_one(&self, threshold: Option<f64>) -> bool;
+}
+
+// impl<T> NumericMulIdentity for T
+// where
+//     T: MulIdentity + NumericAddIdentity + Add<Output = Self> + Neg<Output = Self> + Copy,
+// {
+//     fn is_one(&self, threshold: Option<f64>) -> bool {
+//         (*self + (-T::one())).is_zero(threshold)
+//     }
+// }
 
 #[macro_export]
 macro_rules! impl_add_identity {
@@ -39,6 +53,21 @@ macro_rules! impl_numeric_add_identity {
                     Some(tol) => self.abs() as f64 <= tol,
                     None => self.abs() == Self::zero(),
                 }
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_numeric_mul_identity {
+    ($impl_type:ty) => {
+        impl NumericMulIdentity for $impl_type {
+            fn is_one(&self, threshold: Option<f64>) -> bool {
+                (*self - Self::one()).is_zero(threshold)
+                // match threshold {
+                //     Some(tol) => self.abs() as f64 <= tol,
+                //     None => self.abs() == Self::zero(),
+                // }
             }
         }
     };
@@ -79,6 +108,14 @@ impl_mul_identity! { i64 }
 impl_mul_identity! { f32 }
 impl_mul_identity! { f64 }
 
+// implement NumericAddIdentity
+impl_numeric_mul_identity! { i8 }
+impl_numeric_mul_identity! { i16 }
+impl_numeric_mul_identity! { i32 }
+impl_numeric_mul_identity! { i64 }
+impl_numeric_mul_identity! { f32 }
+impl_numeric_mul_identity! { f64 }
+
 // implement Numeric
 impl Numeric for i8 {}
 impl Numeric for i16 {}
@@ -88,3 +125,4 @@ impl Numeric for f32 {}
 impl Numeric for f64 {}
 
 // TODO: add bigdecimal support
+// TODO: add 'complex number' support
