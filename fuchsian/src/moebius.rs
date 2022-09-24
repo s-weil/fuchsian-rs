@@ -1,5 +1,5 @@
 use crate::algebraic_extensions::{
-    AddIdentity, MulIdentity, Numeric, NumericAddIdentity, NumericMulIdentity,
+    AddIdentityElement, MulIdentityElement, Numeric, NumericAddIdentity, NumericMulIdentity,
 };
 use std::{
     fmt,
@@ -105,13 +105,25 @@ where
 }
 impl<T> Eq for MoebiusTransformation<T> where T: PartialEq {}
 
+impl<T> std::hash::Hash for MoebiusTransformation<T>
+where
+    T: std::hash::Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.a.hash(state);
+        self.b.hash(state);
+        self.c.hash(state);
+        self.d.hash(state);
+    }
+}
+
 // ########################
-// Establish algebraic structure for Moebius-transformations
+// Establish algebraic structures on the set of Moebius-transformations (group, ring, vector space)
 // ########################
 
-impl<T> AddIdentity for MoebiusTransformation<T>
+impl<T> AddIdentityElement for MoebiusTransformation<T>
 where
-    T: AddIdentity,
+    T: AddIdentityElement,
 {
     fn zero() -> Self {
         MoebiusTransformation::new(T::zero(), T::zero(), T::zero(), T::zero())
@@ -131,9 +143,9 @@ where
 }
 
 /// Corresponds to the matrix [1, 0; 0, 1]
-impl<T> MulIdentity for MoebiusTransformation<T>
+impl<T> MulIdentityElement for MoebiusTransformation<T>
 where
-    T: MulIdentity + AddIdentity,
+    T: MulIdentityElement + AddIdentityElement,
 {
     fn one() -> Self {
         MoebiusTransformation::new(T::one(), T::zero(), T::zero(), T::one())
@@ -211,12 +223,6 @@ where
     }
 }
 
-// ########################
-// Establish vector space structure for Moebius-transformations
-// ########################
-
-// addition see above
-
 // Scalability, corresponds to scalar * matrix
 impl<T> Mul<T> for MoebiusTransformation<T>
 where
@@ -237,7 +243,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::MoebiusTransformation;
-    use crate::algebraic_extensions::{AddIdentity, MulIdentity, NumericMulIdentity};
+    use crate::algebraic_extensions::{AddIdentityElement, MulIdentityElement, NumericMulIdentity};
 
     #[test]
     fn test_is_invertible() {
