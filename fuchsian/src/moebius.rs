@@ -207,8 +207,17 @@ mod tests {
 
     #[test]
     fn test_group_structure() {
-        let m1 = MoebiusTransformation::<f32>::new(1.0, 2.2, 3.0, 4.0);
-        assert!((m1 - m1).eq(&MoebiusTransformation::<f32>::zero()));
+        let m = MoebiusTransformation::<f32>::new(1.0, 2.2, 3.0, 4.0);
+        let zero = MoebiusTransformation::<f32>::zero();
+        let one = MoebiusTransformation::<f32>::one();
+        assert!((m - m).eq(&zero));
+
+        assert!(m + zero == m);
+        assert!(zero + m == m);
+        assert!(m * zero == zero);
+        assert!(zero * m == zero);
+        assert!(m * one == m);
+        assert!(one * m == m);
 
         assert!(
             MoebiusTransformation::<i8>::new(1, 1, 0, 0)
@@ -217,11 +226,11 @@ mod tests {
                 == MoebiusTransformation::<i8>::one()
         );
 
-        let m2 = MoebiusTransformation::<f64>::new(-1.0, 2.0, -3.0, 4.0);
-        let m3 = MoebiusTransformation::<f64>::new(-5.0, 7.0, 1.0, 5.0);
+        let m1 = MoebiusTransformation::<f64>::new(-1.0, 2.0, -3.0, 4.0);
+        let m2 = MoebiusTransformation::<f64>::new(-5.0, 7.0, 1.0, 5.0);
 
-        assert!(m2 + m3 == MoebiusTransformation::<f64>::new(-6.0, 9.0, -2.0, 9.0));
-        assert!(m2 - m3 == MoebiusTransformation::<f64>::new(4.0, -5.0, -4.0, -1.0));
-        assert!(m2 * m3 == MoebiusTransformation::<f64>::new(7.0, 3.0, 19.0, -1.0));
+        assert!(m1 + m2 == MoebiusTransformation::<f64>::new(-6.0, 9.0, -2.0, 9.0));
+        assert!(m1 - m2 == MoebiusTransformation::<f64>::new(4.0, -5.0, -4.0, -1.0));
+        assert!(m1 * m2 == MoebiusTransformation::<f64>::new(7.0, 3.0, 19.0, -1.0));
     }
 }
