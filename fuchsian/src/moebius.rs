@@ -6,7 +6,7 @@ use std::{
 
 /// https://en.wikipedia.org/wiki/M%C3%B6bius_transformation
 /// Corresponds to the matrix-vector multiplication of the matrix
-/// [[a, b]; [c, d]] * [x, y]
+/// [a, b; c, d] * [x; y]
 /// for [x, y] in the (real) Euclidean vector space.
 pub struct MoebiusTransformation<T> {
     a: T,
@@ -32,7 +32,7 @@ impl<T> MoebiusTransformation<T> {
     where
         T: Numeric + std::marker::Copy,
     {
-        self.a * self.d - self.b * self.c
+        self.a * self.d + (-(self.b * self.c))
     }
 
     pub fn is_invertible(&self, threshold: Option<f64>) -> bool

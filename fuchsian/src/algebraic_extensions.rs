@@ -1,8 +1,8 @@
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Mul, Neg};
 
 /// Mimic some features of a ring, without ring axioms (Abelian group, Associativity, Distributivity)
 pub trait Numeric:
-    Sized + AddIdentity + Add<Output = Self> + Mul<Output = Self> + Sub<Output = Self>
+    Sized + AddIdentity + Add<Output = Self> + Mul<Output = Self> + Neg<Output = Self>
 {
 }
 
