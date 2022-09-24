@@ -64,10 +64,6 @@ macro_rules! impl_numeric_mul_identity {
         impl NumericMulIdentity for $impl_type {
             fn is_one(&self, threshold: Option<f64>) -> bool {
                 (*self - Self::one()).is_zero(threshold)
-                // match threshold {
-                //     Some(tol) => self.abs() as f64 <= tol,
-                //     None => self.abs() == Self::zero(),
-                // }
             }
         }
     };
