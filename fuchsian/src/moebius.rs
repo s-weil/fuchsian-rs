@@ -163,6 +163,29 @@ where
     }
 }
 
+// ########################
+// Establish vector space structure for Moebius-transformations
+// ########################
+
+// addition see above
+
+// Scalability, corresponds to scalar * matrix
+impl<T> Mul<T> for MoebiusTransformation<T>
+where
+    T: Mul<Output = T> + Copy,
+{
+    type Output = Self;
+
+    fn mul(self, rhs: T) -> Self::Output {
+        Self {
+            a: rhs * self.a,
+            b: rhs * self.b,
+            c: rhs * self.c,
+            d: rhs * self.d,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::MoebiusTransformation;
@@ -232,5 +255,18 @@ mod tests {
         assert!(m1 + m2 == MoebiusTransformation::<f64>::new(-6.0, 9.0, -2.0, 9.0));
         assert!(m1 - m2 == MoebiusTransformation::<f64>::new(4.0, -5.0, -4.0, -1.0));
         assert!(m1 * m2 == MoebiusTransformation::<f64>::new(7.0, 3.0, 19.0, -1.0));
+    }
+
+    #[test]
+    fn test_scalability() {
+        assert!(
+            MoebiusTransformation::<i8>::new(1, 3, 0, 2) * 3
+                == MoebiusTransformation::<i8>::new(3, 9, 0, 6)
+        );
+
+        assert!(
+            MoebiusTransformation::<f32>::new(2.2, 3.4, -1.2, 0.5) * 2.0
+                == MoebiusTransformation::<f32>::new(4.4, 6.8, -2.4, 1.0)
+        );
     }
 }
