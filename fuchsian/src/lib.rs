@@ -1,4 +1,4 @@
 #![warn(dead_code)]
 
-pub mod algebraic_extensions;
-pub(crate) mod moebius;
+pub(crate) mod algebraic_extensions;
+pub mod moebius;
