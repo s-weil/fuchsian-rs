@@ -215,4 +215,7 @@ mod tests {
         assert!(pm5.is_some());
         assert_abs_diff_eq!(pm5.unwrap().determinant(), 1.0, epsilon = f32::EPSILON);
     }
+
+    #[test]
+    fn test_fuchsian_group() {}
 }

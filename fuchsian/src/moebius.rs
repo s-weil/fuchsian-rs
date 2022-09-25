@@ -23,6 +23,13 @@ pub struct MoebiusTransformation<T> {
     pub d: T,
 }
 
+#[macro_export]
+macro_rules! moebius {
+    ($impl_type:ty, $a:expr, $b:expr, $c:expr, $d:expr) => {
+        MoebiusTransformation::<$impl_type>::new($a, $b, $c, $d)
+    };
+}
+
 impl<T> MoebiusTransformation<T> {
     pub fn new(a: T, b: T, c: T, d: T) -> Self {
         Self { a, b, c, d }
@@ -264,30 +271,42 @@ mod tests {
     use crate::algebraic_extensions::{AddIdentityElement, MulIdentityElement, NumericMulIdentity};
 
     #[test]
+    fn test_macro() {
+        let m = moebius!(i8, 1, 2, 3, 4);
+        assert_eq!(m.a, 1);
+        assert_eq!(m.d, 4);
+
+        let m = moebius!(i64, 1, 2, 3, 4);
+        assert_eq!(m.a, 1);
+        assert_eq!(m.d, 4);
+
+        let m = moebius!(f32, 1.0, 2.0, 3.0, 4.0);
+        assert_eq!(m.a, 1.0);
+        assert_eq!(m.d, 4.0);
+    }
+
+    #[test]
     fn test_is_invertible() {
-        let m1 = MoebiusTransformation::<f32>::new(1.0, 2.0, 3.0, 4.0);
+        let m1 = moebius!(f32, 1.0, 2.0, 3.0, 4.0);
         assert_eq!(m1.determinant(), -2.0);
         assert!(m1.is_invertible(None));
 
-        let m2 = MoebiusTransformation::<f64>::new(1.0, 2.0, 2.0, 4.0);
+        let m2 = moebius!(f64, 1.0, 2.0, 2.0, 4.0);
         assert_eq!(m2.determinant(), 0.0);
         assert!(!m2.is_invertible(None));
 
-        let m3 = MoebiusTransformation::<f64>::new(1.0, 4.0, 0.0, 1.0);
+        let m3 = moebius!(f64, 1.0, 4.0, 0.0, 1.0);
         assert_eq!(m3.determinant(), 1.0);
         assert!(m3.is_invertible(None));
 
-        let m4 = MoebiusTransformation::<i8>::new(1, 4, 0, -1);
+        let m4 = moebius!(i8, 1, 4, 0, -1);
         assert_eq!(m4.determinant(), -1);
         assert!(m4.is_invertible(None));
     }
 
     #[test]
     fn test_squared_sum() {
-        assert_eq!(
-            MoebiusTransformation::<i32>::new(0, 0, 0, 0).squared_sum(),
-            0
-        );
+        assert_eq!(moebius!(i32, 0, 0, 0, 0).squared_sum(), 0);
 
         assert_eq!(MoebiusTransformation::<i32>::zero().squared_sum(), 0);
 
@@ -296,13 +315,13 @@ mod tests {
             2.0
         );
 
-        let m1 = MoebiusTransformation::<f32>::new(1.0, 2.2, 3.0, 4.0);
+        let m1 = moebius!(f32, 1.0, 2.2, 3.0, 4.0);
         assert_eq!((m1 - m1).squared_sum(), 0.0);
     }
 
     #[test]
     fn test_algebraic_structure() {
-        let m = MoebiusTransformation::<f32>::new(1.0, 2.2, 3.0, 4.0);
+        let m = moebius!(f32, 1.0, 2.2, 3.0, 4.0);
         let zero = MoebiusTransformation::<f32>::zero();
         let one = MoebiusTransformation::<f32>::one();
         assert!((m - m).eq(&zero));
@@ -321,8 +340,8 @@ mod tests {
                 == MoebiusTransformation::<i8>::one()
         );
 
-        let m1 = MoebiusTransformation::<f64>::new(-1.0, 2.0, -3.0, 4.0);
-        let m2 = MoebiusTransformation::<f64>::new(-5.0, 7.0, 1.0, 5.0);
+        let m1 = moebius!(f64, -1.0, 2.0, -3.0, 4.0);
+        let m2 = moebius!(f64, -5.0, 7.0, 1.0, 5.0);
 
         assert!(m1 + m2 == MoebiusTransformation::<f64>::new(-6.0, 9.0, -2.0, 9.0));
         assert!(m1 - m2 == MoebiusTransformation::<f64>::new(4.0, -5.0, -4.0, -1.0));
