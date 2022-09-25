@@ -13,7 +13,7 @@ pub trait AddIdentityElement: Sized {
 
 pub trait NumericAddIdentity: AddIdentityElement {
     /// For numerical reasons
-    fn is_zero(&self, threshold: Option<f64>) -> bool;
+    fn is_zero(&self, numerical_threshold: Option<f64>) -> bool;
 }
 
 pub trait MulIdentityElement: Sized {
@@ -22,7 +22,7 @@ pub trait MulIdentityElement: Sized {
 
 pub trait NumericMulIdentity: MulIdentityElement {
     /// For numerical reasons
-    fn is_one(&self, threshold: Option<f64>) -> bool;
+    fn is_one(&self, numerical_threshold: Option<f64>) -> bool;
 }
 
 pub trait NumericInvertible {
@@ -34,14 +34,19 @@ pub trait Inverse: Sized {
     fn inverse(&self) -> std::result::Result<Self, Self::Error>;
 }
 
-// impl<T> NumericMulIdentity for T
-// where
-//     T: MulIdentity + NumericAddIdentity + Add<Output = Self> + Neg<Output = Self> + Copy,
-// {
-//     fn is_one(&self, threshold: Option<f64>) -> bool {
-//         (*self + (-T::one())).is_zero(threshold)
-//     }
-// }
+pub trait SquareRoot {
+    fn square_root(&self) -> Self;
+}
+
+pub trait Signed {
+    /// Cannot call it `signum` due to naming conflict.
+    fn signed(&self) -> Self;
+}
+
+pub trait IsPositive {
+    /// Cannot call it `signum` due to naming conflict.
+    fn is_positive(&self) -> bool;
+}
 
 pub trait MuliplicativeNumeric:
     Sized + MulIdentityElement + Mul<Output = Self> + Div<Output = Self>
@@ -95,6 +100,39 @@ macro_rules! impl_mul_identity {
     };
 }
 
+#[macro_export]
+macro_rules! impl_square_root {
+    ($impl_type:ty) => {
+        impl SquareRoot for $impl_type {
+            fn square_root(&self) -> Self {
+                self.abs().sqrt()
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_signed {
+    ($impl_type:ty) => {
+        impl Signed for $impl_type {
+            fn signed(&self) -> Self {
+                self.signum()
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! impl_is_positive {
+    ($impl_type:ty) => {
+        impl IsPositive for $impl_type {
+            fn is_positive(&self) -> bool {
+                self.signum() > (0 as $impl_type)
+            }
+        }
+    };
+}
+
 // implement AddIdentity
 impl_add_identity! { i8 }
 impl_add_identity! { i16 }
@@ -138,6 +176,22 @@ impl Numeric for f64 {}
 // implement MuliplicativeNumeric
 impl MuliplicativeNumeric for f32 {}
 impl MuliplicativeNumeric for f64 {}
+
+// implement SignedSquareRoot
+impl_square_root! { f32 }
+impl_square_root! { f64 }
+
+// implement Signed
+impl_signed! { f32 }
+impl_signed! { f64 }
+
+// implement IsPositive
+impl_is_positive! { i8 }
+impl_is_positive! { i16 }
+impl_is_positive! { i32 }
+impl_is_positive! { i64 }
+impl_is_positive! { f32 }
+impl_is_positive! { f64 }
 
 // TODO: add bigdecimal support
 // TODO: add 'complex number' support
