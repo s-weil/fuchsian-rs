@@ -130,7 +130,9 @@ where
 }
 
 impl<T> FuchsianGroup<T> {
-    pub fn for_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self
+    /// Tries to create a `ProjectedMoebiusTransformation<T>` for each 'raw generator',
+    /// but filters for distinct `MoebiusTransformations<T>` with `determinant == 1`.
+    pub fn create_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self
     where
         T: Numeric + MulIdentityElement + Eq + Copy,
         MoebiusTransformation<T>: PartialEq + std::hash::Hash,
@@ -147,6 +149,12 @@ impl<T> FuchsianGroup<T> {
         Self { generators }
     }
 
+    /// Tries to create a `ProjectedMoebiusTransformation<T>` for each 'raw generator',
+    /// but filters for valid ones, meaning for distinct, invertible and orientation-preserving `MoebiusTransformations<T>`.
+    /// For instance,
+    /// - `[ -1, 0; 0, 1 ]` has determinant `-1` and is not orientation-preserving
+    /// - `[ -1, 1; 0, 0 ]` has determinant `0` and is not invertible
+    /// - `[ 2, 1; 1, 1 ]` and `[ 4, 2; 2, 2 ]` are projected to the same element and will result in only one generator
     pub fn create_projected(
         raw_generators: Vec<MoebiusTransformation<T>>,
         numeric_threshold: Option<f64>,
