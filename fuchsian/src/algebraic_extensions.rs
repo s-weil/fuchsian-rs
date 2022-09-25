@@ -1,4 +1,4 @@
-use std::ops::{Add, Mul, Neg};
+use std::ops::{Add, Div, Mul, Neg};
 
 /// Mimic some features of a ring, without ring axioms (Abelian group, Associativity, Distributivity)
 pub trait Numeric:
@@ -29,6 +29,11 @@ pub trait NumericInvertible {
     fn is_invertible(&self) -> bool;
 }
 
+pub trait Inverse: Sized {
+    type Error;
+    fn inverse(&self) -> std::result::Result<Self, Self::Error>;
+}
+
 // impl<T> NumericMulIdentity for T
 // where
 //     T: MulIdentity + NumericAddIdentity + Add<Output = Self> + Neg<Output = Self> + Copy,
@@ -37,6 +42,11 @@ pub trait NumericInvertible {
 //         (*self + (-T::one())).is_zero(threshold)
 //     }
 // }
+
+pub trait MuliplicativeNumeric:
+    Sized + MulIdentityElement + Mul<Output = Self> + Div<Output = Self>
+{
+} // Inverse {}
 
 #[macro_export]
 macro_rules! impl_add_identity {
@@ -124,6 +134,10 @@ impl Numeric for i32 {}
 impl Numeric for i64 {}
 impl Numeric for f32 {}
 impl Numeric for f64 {}
+
+// implement MuliplicativeNumeric
+impl MuliplicativeNumeric for f32 {}
+impl MuliplicativeNumeric for f64 {}
 
 // TODO: add bigdecimal support
 // TODO: add 'complex number' support

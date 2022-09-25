@@ -1,5 +1,6 @@
 use crate::algebraic_extensions::{
-    AddIdentityElement, MulIdentityElement, Numeric, NumericAddIdentity, NumericMulIdentity,
+    AddIdentityElement, Inverse, MulIdentityElement, Numeric, NumericAddIdentity,
+    NumericMulIdentity,
 };
 use std::{
     fmt,
@@ -16,10 +17,10 @@ use std::{
 /// Corresponds to the complex-valued function
 /// $z complex -> f(z) = \frac{a*z + b}{cz + d}$
 pub struct MoebiusTransformation<T> {
-    a: T,
-    b: T,
-    c: T,
-    d: T,
+    pub a: T,
+    pub b: T,
+    pub c: T,
+    pub d: T,
 }
 
 impl<T> MoebiusTransformation<T> {
@@ -240,6 +241,23 @@ where
     }
 }
 
+// TODO: move
+pub const DEFAULT_THRESHOLD: f64 = 1e-16;
+
+impl<T> Inverse for MoebiusTransformation<T>
+where
+    T: Numeric + NumericAddIdentity + std::marker::Copy + Div<Output = T>,
+{
+    type Error = &'static str;
+
+    fn inverse(&self) -> std::result::Result<Self, Self::Error> {
+        if let Some(m) = self.inverse(Some(DEFAULT_THRESHOLD)) {
+            return Ok(m);
+        }
+        Err("Moebius transformation is not invertible. Determinant smaller than 1e-16")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::MoebiusTransformation;
@@ -283,7 +301,7 @@ mod tests {
     }
 
     #[test]
-    fn test_group_structure() {
+    fn test_algebraic_structure() {
         let m = MoebiusTransformation::<f32>::new(1.0, 2.2, 3.0, 4.0);
         let zero = MoebiusTransformation::<f32>::zero();
         let one = MoebiusTransformation::<f32>::one();
