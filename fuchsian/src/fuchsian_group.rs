@@ -1,7 +1,5 @@
 use crate::{
-    algebraic_extensions::{
-        IsPositive, MulIdentityElement, Numeric, NumericAddIdentity, SquareRoot,
-    },
+    algebraic_extensions::{IsPositive, MulIdentity, Numeric, NumericAddIdentity, SquareRoot},
     group_dynamics::{FinitelyGeneratedGroup, Group},
     moebius::MoebiusTransformation,
 };
@@ -13,7 +11,7 @@ use std::{
 /// Helper:
 /// We identify MoebiusTransformations with the condition `determinant == 1` with the orientation preserving subset PSL(2,R) within 2x2 matrices.
 /// Due to mathematical limitations in rust we cannot model this condition, i.e. this subset, and hence
-/// use the wrapper `ProjectedMoebiusTransformation<_>` which checks the condition upon construction.
+/// use the wrapper `ProjectedMoebiusTransformation<_>` which checks the condition upon construction and assumes the condition.
 struct ProjectedMoebiusTransformation<T> {
     m: MoebiusTransformation<T>,
 }
@@ -49,7 +47,7 @@ where
 impl<T> ProjectedMoebiusTransformation<T> {
     fn rescale(&self, positive_determinant: T) -> Self
     where
-        T: Numeric + Div<Output = T> + MulIdentityElement + SquareRoot + Copy,
+        T: Numeric + Div<Output = T> + MulIdentity + SquareRoot + Copy,
     {
         let scalar = T::one() / positive_determinant.square_root();
         Self { m: self.m * scalar }
@@ -61,7 +59,7 @@ impl<T> ProjectedMoebiusTransformation<T> {
         T: Numeric
             + NumericAddIdentity
             + Div<Output = T>
-            + MulIdentityElement
+            + MulIdentity
             + SquareRoot
             + IsPositive
             + Copy,
@@ -80,7 +78,7 @@ impl<T> ProjectedMoebiusTransformation<T> {
 // Multiplicative group implementation for MoebiusTransformation with the restriction of determinant == 1.
 impl<T> Group for ProjectedMoebiusTransformation<T>
 where
-    T: Numeric + MulIdentityElement + Copy + Eq,
+    T: Numeric + MulIdentity + Copy + Eq,
 {
     fn combine(&self, _other: &Self) -> Self {
         let m1 = self.m;
@@ -134,7 +132,7 @@ impl<T> FuchsianGroup<T> {
     /// but filters for distinct `MoebiusTransformations<T>` with `determinant == 1`.
     pub fn create_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self
     where
-        T: Numeric + MulIdentityElement + Eq + Copy,
+        T: Numeric + MulIdentity + Eq + Copy,
         MoebiusTransformation<T>: PartialEq + std::hash::Hash,
     {
         let mut generators = HashSet::new();
@@ -163,7 +161,7 @@ impl<T> FuchsianGroup<T> {
         T: Numeric
             + Div<Output = T>
             + NumericAddIdentity
-            + MulIdentityElement
+            + MulIdentity
             + SquareRoot
             + IsPositive
             + Copy
@@ -182,6 +180,8 @@ impl<T> FuchsianGroup<T> {
 mod tests {
     use crate::{fuchsian_group::ProjectedMoebiusTransformation, moebius::MoebiusTransformation};
     use approx::assert_abs_diff_eq;
+
+    use super::FuchsianGroup;
 
     #[test]
     fn test_projection() {
@@ -217,5 +217,10 @@ mod tests {
     }
 
     #[test]
-    fn test_fuchsian_group() {}
+    fn test_fuchsian_group() {
+        let m1 = MoebiusTransformation::<f64>::new(1.0, 2.0, 3.0, 4.0);
+        let m2 = MoebiusTransformation::<f64>::new(-1.0, -2.0, 3.0, 4.0);
+
+        let fg = FuchsianGroup::<f64>::create_projected(vec![m1, m2], None);
+    }
 }

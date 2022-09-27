@@ -1,6 +1,5 @@
 use crate::algebraic_extensions::{
-    AddIdentityElement, Inverse, MulIdentityElement, Numeric, NumericAddIdentity,
-    NumericMulIdentity,
+    AddIdentity, Inverse, MulIdentity, Numeric, NumericAddIdentity, NumericMulIdentity,
 };
 use std::{
     fmt,
@@ -11,7 +10,7 @@ use std::{
 //  https://crates.io/crates/rust-latex-doc-minimal-example for math formulas
 
 /// https://en.wikipedia.org/wiki/M%C3%B6bius_transformation
-/// Corresponds to the matrix-vector multiplication of the matrix
+/// Corresponds to the 2x2 matrix-vector multiplication of the matrix
 /// $[a, b; c, d] * [x; y]$
 /// for $[x; y]$ in the (real) Euclidean vector space.
 /// Corresponds to the complex-valued function
@@ -129,9 +128,9 @@ where
 // Establish algebraic structures on the set of Moebius-transformations (group, ring, vector space)
 // ########################
 
-impl<T> AddIdentityElement for MoebiusTransformation<T>
+impl<T> AddIdentity for MoebiusTransformation<T>
 where
-    T: AddIdentityElement,
+    T: AddIdentity,
 {
     fn zero() -> Self {
         MoebiusTransformation::new(T::zero(), T::zero(), T::zero(), T::zero())
@@ -151,9 +150,9 @@ where
 }
 
 /// Corresponds to the matrix [1, 0; 0, 1]
-impl<T> MulIdentityElement for MoebiusTransformation<T>
+impl<T> MulIdentity for MoebiusTransformation<T>
 where
-    T: MulIdentityElement + AddIdentityElement,
+    T: MulIdentity + AddIdentity,
 {
     fn one() -> Self {
         MoebiusTransformation::new(T::one(), T::zero(), T::zero(), T::one())
@@ -268,7 +267,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::MoebiusTransformation;
-    use crate::algebraic_extensions::{AddIdentityElement, MulIdentityElement, NumericMulIdentity};
+    use crate::algebraic_extensions::{AddIdentity, MulIdentity, NumericMulIdentity};
 
     #[test]
     fn test_macro() {

@@ -2,25 +2,25 @@ use std::ops::{Add, Div, Mul, Neg};
 
 /// Mimic some features of a ring, without ring axioms (Abelian group, Associativity, Distributivity)
 pub trait Numeric:
-    Sized + AddIdentityElement + Add<Output = Self> + Mul<Output = Self> + Neg<Output = Self>
+    Sized + AddIdentity + Add<Output = Self> + Mul<Output = Self> + Neg<Output = Self>
 {
 }
 // TODO: rename to make sure numeric is not meant to be math numeric
 
-pub trait AddIdentityElement: Sized {
+pub trait AddIdentity: Sized {
     fn zero() -> Self;
 }
 
-pub trait NumericAddIdentity: AddIdentityElement {
+pub trait NumericAddIdentity: AddIdentity {
     /// For numerical reasons
     fn is_zero(&self, numerical_threshold: Option<f64>) -> bool;
 }
 
-pub trait MulIdentityElement: Sized {
+pub trait MulIdentity: Sized {
     fn one() -> Self;
 }
 
-pub trait NumericMulIdentity: MulIdentityElement {
+pub trait NumericMulIdentity: MulIdentity {
     /// For numerical reasons
     fn is_one(&self, numerical_threshold: Option<f64>) -> bool;
 }
@@ -49,14 +49,14 @@ pub trait IsPositive {
 }
 
 pub trait MuliplicativeNumeric:
-    Sized + MulIdentityElement + Mul<Output = Self> + Div<Output = Self>
+    Sized + MulIdentity + Mul<Output = Self> + Div<Output = Self>
 {
 } // Inverse {}
 
 #[macro_export]
 macro_rules! impl_add_identity {
     ($impl_type:ty) => {
-        impl AddIdentityElement for $impl_type {
+        impl AddIdentity for $impl_type {
             fn zero() -> Self {
                 0 as $impl_type
             }
@@ -92,7 +92,7 @@ macro_rules! impl_numeric_mul_identity {
 #[macro_export]
 macro_rules! impl_mul_identity {
     ($impl_type:ty) => {
-        impl MulIdentityElement for $impl_type {
+        impl MulIdentity for $impl_type {
             fn one() -> Self {
                 1 as $impl_type
             }
