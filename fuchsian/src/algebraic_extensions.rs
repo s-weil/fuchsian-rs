@@ -6,6 +6,10 @@ pub trait Numeric:
 {
 }
 // TODO: rename to make sure numeric is not meant to be math numeric
+impl<T> Numeric for T where
+    T: Sized + AddIdentity + Add<Output = T> + Mul<Output = T> + Neg<Output = T>
+{
+}
 
 pub trait AddIdentity: Sized {
     fn zero() -> Self;
@@ -165,13 +169,13 @@ impl_numeric_mul_identity! { i64 }
 impl_numeric_mul_identity! { f32 }
 impl_numeric_mul_identity! { f64 }
 
-// implement Numeric
-impl Numeric for i8 {}
-impl Numeric for i16 {}
-impl Numeric for i32 {}
-impl Numeric for i64 {}
-impl Numeric for f32 {}
-impl Numeric for f64 {}
+// // implement Numeric
+// impl Numeric for i8 {}
+// impl Numeric for i16 {}
+// impl Numeric for i32 {}
+// impl Numeric for i64 {}
+// impl Numeric for f32 {}
+// impl Numeric for f64 {}
 
 // implement MuliplicativeNumeric
 impl MuliplicativeNumeric for f32 {}

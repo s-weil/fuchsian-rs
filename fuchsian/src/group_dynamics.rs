@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 /// The [mathematical group](https://en.wikipedia.org/wiki/Group_(mathematics)#Definition)
 /// definition except for the associativity identity.
 // /// In particular, `MoebiusTransformation<T>` is an additive group
@@ -43,9 +41,14 @@ pub trait Group: Eq + Sized {
 
 pub trait FinitelyGeneratedGroup<M>
 where
-    M: Group + std::hash::Hash,
+    M: Group,
 {
-    fn generators(&self) -> &HashSet<M>;
+    fn generators(&self) -> &[M];
+}
+
+pub trait Action {
+    type Space: Eq;
+    fn action(&self, x: &Self::Space) -> Self::Space;
 }
 
 /// The mathematical (left) [group action](https://en.wikipedia.org/wiki/Group_action) of

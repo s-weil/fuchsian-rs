@@ -1,19 +1,17 @@
 use crate::{
     algebraic_extensions::{IsPositive, MulIdentity, Numeric, NumericAddIdentity, SquareRoot},
-    group_dynamics::{FinitelyGeneratedGroup, Group},
+    group_dynamics::{Action, FinitelyGeneratedGroup, Group},
     moebius::MoebiusTransformation,
 };
-use std::{
-    collections::HashSet,
-    ops::{Deref, Div},
-};
+use num_complex::Complex;
+use std::ops::{Deref, Div};
 
 /// Helper:
 /// We identify MoebiusTransformations with the condition `determinant == 1` with the orientation preserving subset PSL(2,R) within 2x2 matrices.
 /// Due to mathematical limitations in rust we cannot model this condition, i.e. this subset, and hence
 /// use the wrapper `ProjectedMoebiusTransformation<_>` which checks the condition upon construction and assumes the condition.
 struct ProjectedMoebiusTransformation<T> {
-    m: MoebiusTransformation<T>,
+    pub(crate) m: MoebiusTransformation<T>,
 }
 
 impl<T> Deref for ProjectedMoebiusTransformation<T> {
@@ -80,9 +78,9 @@ impl<T> Group for ProjectedMoebiusTransformation<T>
 where
     T: Numeric + MulIdentity + Copy + Eq,
 {
-    fn combine(&self, _other: &Self) -> Self {
+    fn combine(&self, other: &Self) -> Self {
         let m1 = self.m;
-        let m2 = self.m;
+        let m2 = other.m;
         Self { m: m1 * m2 }
     }
 
@@ -114,15 +112,15 @@ where
 ///
 /// NOTE: for simplicity we will in the following restrict to the case of <i>finitely generated</i> Fuchsian groups.
 pub struct FuchsianGroup<T> {
-    generators: HashSet<ProjectedMoebiusTransformation<T>>,
+    generators: Vec<ProjectedMoebiusTransformation<T>>,
 }
 
 impl<T> FinitelyGeneratedGroup<ProjectedMoebiusTransformation<T>> for FuchsianGroup<T>
 where
-    ProjectedMoebiusTransformation<T>: Group + std::hash::Hash, // T: Numeric + MulIdentityElement + Copy + Eq,
-                                                                // MoebiusTransformation<T>: PartialEq + std::hash::Hash,
+    ProjectedMoebiusTransformation<T>: Group, // T: Numeric + MulIdentityElement + Copy + Eq,
+                                              // MoebiusTransformation<T>: PartialEq + std::hash::Hash,
 {
-    fn generators(&self) -> &HashSet<ProjectedMoebiusTransformation<T>> {
+    fn generators(&self) -> &[ProjectedMoebiusTransformation<T>] {
         &self.generators
     }
 }
@@ -133,14 +131,14 @@ impl<T> FuchsianGroup<T> {
     pub fn create_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self
     where
         T: Numeric + MulIdentity + Eq + Copy,
-        MoebiusTransformation<T>: PartialEq + std::hash::Hash,
+        MoebiusTransformation<T>: PartialEq,
     {
-        let mut generators = HashSet::new();
+        let mut generators = Vec::new();
 
         let one = T::one();
         for m in raw_generators.into_iter() {
             if m.determinant() == one {
-                generators.insert(ProjectedMoebiusTransformation { m });
+                generators.push(ProjectedMoebiusTransformation { m });
             }
         }
 
@@ -152,7 +150,7 @@ impl<T> FuchsianGroup<T> {
     /// For instance,
     /// - `[ -1, 0; 0, 1 ]` has determinant `-1` and is not orientation-preserving
     /// - `[ -1, 1; 0, 0 ]` has determinant `0` and is not invertible
-    /// - `[ 2, 1; 1, 1 ]` and `[ 4, 2; 2, 2 ]` are projected to the same element and will result in only one generator
+    /// - `[ 2, 1; 1, 1 ]` and `[ 4, 2; 2, 2 ]` are projected to the same element and will result in only one generator // TODO:
     pub fn create_projected(
         raw_generators: Vec<MoebiusTransformation<T>>,
         numeric_threshold: Option<f64>,
@@ -166,15 +164,59 @@ impl<T> FuchsianGroup<T> {
             + IsPositive
             + Copy
             + PartialEq,
-        MoebiusTransformation<T>: PartialEq + std::hash::Hash,
+        MoebiusTransformation<T>: PartialEq,
     {
         let generators = raw_generators
             .into_iter()
             .flat_map(|m| ProjectedMoebiusTransformation::<T>::try_from(m, numeric_threshold))
-            .collect::<HashSet<ProjectedMoebiusTransformation<T>>>();
+            .collect::<Vec<ProjectedMoebiusTransformation<T>>>();
         Self { generators }
     }
 }
+
+/// Implement Action for float types on the complex plane.
+impl<T> Action for ProjectedMoebiusTransformation<T>
+where
+    T: Eq + Numeric + Copy,
+    Complex<T>: Div<Output = Complex<T>>,
+{
+    type Space = num_complex::Complex<T>;
+
+    fn action(&self, x: &Self::Space) -> Self::Space {
+        let nom = Complex::<T> {
+            re: self.m.a * x.re + self.m.b,
+            im: self.m.a * x.im,
+        };
+        let denom = Complex::<T> {
+            re: self.m.c * x.re + self.m.d,
+            im: self.m.c * x.im,
+        };
+        // TODO: check for 0?
+        nom / denom
+    }
+}
+
+// impl<T> GroupAction for FuchsianGroup<T>
+// where
+//     T: Eq + Sized,
+// {
+//     type Space = num_complex::Complex<T>;
+
+//     fn action(&self,  x: &Self::Space) -> Self::Space {
+//         self.
+//     }
+
+//     // how to model identities in general?
+//     fn identity_check(&self, x: Self::Space) -> bool {
+//         self.action(&Group::identity(), &x) == x
+//     }
+
+//     fn compatibility_check(&self, g: &Self::OpGroup, h: &Self::OpGroup, x: &Self::Space) -> bool {
+//         let g_hx = self.action(g, &self.action(h, x));
+//         let gh_x = self.action(&g.combine(h), x);
+//         g_hx == gh_x
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -222,5 +264,6 @@ mod tests {
         let m2 = MoebiusTransformation::<f64>::new(-1.0, -2.0, 3.0, 4.0);
 
         let fg = FuchsianGroup::<f64>::create_projected(vec![m1, m2], None);
+        assert_eq!(fg.generators.len(), 1);
     }
 }
