@@ -175,53 +175,35 @@ impl<T> FuchsianGroup<T> {
 }
 
 /// Implement Action for float types on the complex plane.
-impl<T> Action for ProjectedMoebiusTransformation<T>
+impl<T> Action<num_complex::Complex<T>> for MoebiusTransformation<T>
 where
-    T: Eq + Numeric + Copy,
+    T: Numeric + Copy + PartialEq,
     Complex<T>: Div<Output = Complex<T>>,
 {
-    type Space = num_complex::Complex<T>;
+    // type Space = num_complex::Complex<T>;
 
-    fn action(&self, x: &Self::Space) -> Self::Space {
+    fn apply(&self, x: &Complex<T>) -> Complex<T> {
         let nom = Complex::<T> {
-            re: self.m.a * x.re + self.m.b,
-            im: self.m.a * x.im,
+            re: self.a * x.re + self.b,
+            im: self.a * x.im,
         };
         let denom = Complex::<T> {
-            re: self.m.c * x.re + self.m.d,
-            im: self.m.c * x.im,
+            re: self.c * x.re + self.d,
+            im: self.c * x.im,
         };
         // TODO: check for 0?
         nom / denom
     }
 }
 
-// impl<T> GroupAction for FuchsianGroup<T>
-// where
-//     T: Eq + Sized,
-// {
-//     type Space = num_complex::Complex<T>;
-
-//     fn action(&self,  x: &Self::Space) -> Self::Space {
-//         self.
-//     }
-
-//     // how to model identities in general?
-//     fn identity_check(&self, x: Self::Space) -> bool {
-//         self.action(&Group::identity(), &x) == x
-//     }
-
-//     fn compatibility_check(&self, g: &Self::OpGroup, h: &Self::OpGroup, x: &Self::Space) -> bool {
-//         let g_hx = self.action(g, &self.action(h, x));
-//         let gh_x = self.action(&g.combine(h), x);
-//         g_hx == gh_x
-//     }
-// }
-
 #[cfg(test)]
 mod tests {
-    use crate::{fuchsian_group::ProjectedMoebiusTransformation, moebius::MoebiusTransformation};
+    use crate::{
+        fuchsian_group::ProjectedMoebiusTransformation, group_dynamics::Action,
+        moebius::MoebiusTransformation,
+    };
     use approx::assert_abs_diff_eq;
+    use num_complex::Complex;
 
     use super::FuchsianGroup;
 
@@ -265,5 +247,14 @@ mod tests {
 
         let fg = FuchsianGroup::<f64>::create_projected(vec![m1, m2], None);
         assert_eq!(fg.generators.len(), 1);
+    }
+
+    #[test]
+    fn test_action() {
+        let m = MoebiusTransformation::<f64>::new(1.0, 2.0, 3.0, 4.0);
+        let c = Complex::new(1.0, 0.0);
+
+        let y = m.apply(&c);
+        assert!(y.im >= 0.0);
     }
 }

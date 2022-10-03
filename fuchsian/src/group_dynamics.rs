@@ -46,29 +46,28 @@ where
     fn generators(&self) -> &[M];
 }
 
-pub trait Action {
-    type Space: Eq;
-    fn action(&self, x: &Self::Space) -> Self::Space;
+pub trait Action<Space>
+where
+    Space: PartialEq,
+{
+    fn apply(&self, x: &Space) -> Space;
 }
 
 /// The mathematical (left) [group action](https://en.wikipedia.org/wiki/Group_action) of
 /// a group `G` acting on a space `X`.
-pub trait GroupAction {
-    /// The group operating on the space
-    type OpGroup: Group;
-    type Space: Eq;
-
-    fn action(&self, g: &Self::OpGroup, x: &Self::Space) -> Self::Space;
-
+pub trait GroupAction<Space>: Action<Space> + Group
+where
+    Space: PartialEq,
+{
     // how to model identities in general?
-    fn identity_check(&self, x: Self::Space) -> bool {
-        self.action(&Group::identity(), &x) == x
+    fn identity_check(&self, x: &Space) -> bool {
+        ((&Group::identity() as &Self).apply(&x)).eq(&x)
     }
 
-    fn compatibility_check(&self, g: &Self::OpGroup, h: &Self::OpGroup, x: &Self::Space) -> bool {
-        let g_hx = self.action(g, &self.action(h, x));
-        let gh_x = self.action(&g.combine(h), x);
-        g_hx == gh_x
+    fn compatibility_check(&self, h: &Self, x: &Space) -> bool {
+        let g_hx = self.apply(&h.apply(&x));
+        let gh_x = (self.combine(h)).apply(x); //.action(&g.combine(h), x);
+        g_hx.eq(&gh_x)
     }
 }
 
