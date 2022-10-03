@@ -11,7 +11,7 @@ use std::ops::{Deref, Div};
 /// Due to mathematical limitations in rust we cannot model this condition, i.e. this subset, and hence
 /// use the wrapper `ProjectedMoebiusTransformation<_>` which checks the condition upon construction and assumes the condition.
 struct ProjectedMoebiusTransformation<T> {
-    pub(crate) m: MoebiusTransformation<T>,
+    m: MoebiusTransformation<T>,
 }
 
 impl<T> Deref for ProjectedMoebiusTransformation<T> {
@@ -76,7 +76,7 @@ impl<T> ProjectedMoebiusTransformation<T> {
 // Multiplicative group implementation for MoebiusTransformation with the restriction of determinant == 1.
 impl<T> Group for ProjectedMoebiusTransformation<T>
 where
-    T: Numeric + MulIdentity + Copy + Eq,
+    T: Numeric + MulIdentity + Copy + PartialEq,
 {
     fn combine(&self, other: &Self) -> Self {
         let m1 = self.m;
@@ -90,8 +90,8 @@ where
     }
 
     fn inverse(&self) -> Self {
-        // Do not check the determinant, it is assumed to be 1.
-        // Check `MoebiusTransformation.inverse()` for the formula.
+        // No need to check the determinant, since it is assumed to be 1.
+        // See `MoebiusTransformation.inverse()` for the formula.
         let inverse = MoebiusTransformation::<T> {
             a: *&self.m.d,
             b: -*&self.m.b,
@@ -128,9 +128,9 @@ where
 impl<T> FuchsianGroup<T> {
     /// Tries to create a `ProjectedMoebiusTransformation<T>` for each 'raw generator',
     /// but filters for distinct `MoebiusTransformations<T>` with `determinant == 1`.
-    pub fn create_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self
+    pub fn create_from_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self
     where
-        T: Numeric + MulIdentity + Eq + Copy,
+        T: Numeric + MulIdentity + PartialEq + Copy,
         MoebiusTransformation<T>: PartialEq,
     {
         let mut generators = Vec::new();
@@ -180,8 +180,6 @@ where
     T: Numeric + Copy + PartialEq,
     Complex<T>: Div<Output = Complex<T>>,
 {
-    // type Space = num_complex::Complex<T>;
-
     fn apply(&self, x: &Complex<T>) -> Complex<T> {
         let nom = Complex::<T> {
             re: self.a * x.re + self.b,
@@ -193,6 +191,17 @@ where
         };
         // TODO: check for 0?
         nom / denom
+    }
+}
+
+/// Implement Action for float types on the complex plane.
+impl<T> Action<num_complex::Complex<T>> for ProjectedMoebiusTransformation<T>
+where
+    T: Numeric + Copy + PartialEq,
+    Complex<T>: Div<Output = Complex<T>>,
+{
+    fn apply(&self, x: &Complex<T>) -> Complex<T> {
+        (self.deref() as &MoebiusTransformation<T>).apply(x)
     }
 }
 
@@ -257,4 +266,6 @@ mod tests {
         let y = m.apply(&c);
         assert!(y.im >= 0.0);
     }
+
+    // TODO: further tests on action and group operations
 }

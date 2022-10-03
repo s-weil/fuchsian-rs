@@ -21,7 +21,7 @@
 // ///     }
 // /// }
 // /// ```
-pub trait Group: Eq + Sized {
+pub trait Group: PartialEq + Sized {
     /// The binary operation.
     fn combine(&self, other: &Self) -> Self;
 
