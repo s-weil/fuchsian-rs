@@ -1,6 +1,8 @@
 use crate::{
-    algebraic_extensions::{IsPositive, MulIdentity, Numeric, NumericAddIdentity, SquareRoot},
-    group_dynamics::{Action, FinitelyGeneratedGroup, Group},
+    algebraic_extensions::{
+        Group, IsPositive, MulIdentity, Numeric, NumericAddIdentity, SquareRoot,
+    },
+    group_dynamics::{Action, FinitelyGeneratedGroup},
     moebius::MoebiusTransformation,
 };
 use num_complex::Complex;
@@ -117,8 +119,7 @@ pub struct FuchsianGroup<T> {
 
 impl<T> FinitelyGeneratedGroup<ProjectedMoebiusTransformation<T>> for FuchsianGroup<T>
 where
-    ProjectedMoebiusTransformation<T>: Group, // T: Numeric + MulIdentityElement + Copy + Eq,
-                                              // MoebiusTransformation<T>: PartialEq + std::hash::Hash,
+    ProjectedMoebiusTransformation<T>: Group,
 {
     fn generators(&self) -> &[ProjectedMoebiusTransformation<T>] {
         &self.generators
@@ -150,7 +151,7 @@ impl<T> FuchsianGroup<T> {
     /// For instance,
     /// - `[ -1, 0; 0, 1 ]` has determinant `-1` and is not orientation-preserving
     /// - `[ -1, 1; 0, 0 ]` has determinant `0` and is not invertible
-    /// - `[ 2, 1; 1, 1 ]` and `[ 4, 2; 2, 2 ]` are projected to the same element and will result in only one generator // TODO:
+    /// - `[ 2, 1; 1, 1 ]` and `[ 4, 2; 2, 2 ]` are projected to the same element and will result in only one generator
     pub fn create_projected(
         raw_generators: Vec<MoebiusTransformation<T>>,
         numeric_threshold: Option<f64>,
@@ -166,6 +167,7 @@ impl<T> FuchsianGroup<T> {
             + PartialEq,
         MoebiusTransformation<T>: PartialEq,
     {
+        // TODO: filter out duplicates
         let generators = raw_generators
             .into_iter()
             .flat_map(|m| ProjectedMoebiusTransformation::<T>::try_from(m, numeric_threshold))
@@ -180,7 +182,7 @@ where
     T: Numeric + Copy + PartialEq,
     Complex<T>: Div<Output = Complex<T>>,
 {
-    fn apply(&self, x: &Complex<T>) -> Complex<T> {
+    fn map(&self, x: &Complex<T>) -> Complex<T> {
         let nom = Complex::<T> {
             re: self.a * x.re + self.b,
             im: self.a * x.im,
@@ -200,8 +202,8 @@ where
     T: Numeric + Copy + PartialEq,
     Complex<T>: Div<Output = Complex<T>>,
 {
-    fn apply(&self, x: &Complex<T>) -> Complex<T> {
-        (self.deref() as &MoebiusTransformation<T>).apply(x)
+    fn map(&self, x: &Complex<T>) -> Complex<T> {
+        (self.deref() as &MoebiusTransformation<T>).map(x)
     }
 }
 
@@ -259,13 +261,25 @@ mod tests {
     }
 
     #[test]
-    fn test_action() {
+    fn test_action_real_line() {
         let m = MoebiusTransformation::<f64>::new(1.0, 2.0, 3.0, 4.0);
         let c = Complex::new(1.0, 0.0);
 
-        let y = m.apply(&c);
-        assert!(y.im >= 0.0);
+        let y = m.map(&c);
+        assert_eq!(y.re, 3.0 / 7.0);
+        assert_eq!(y.im, 0.0);
     }
 
-    // TODO: further tests on action and group operations
+    #[test]
+    fn test_action_complex() {
+        let m = MoebiusTransformation::<f64>::new(1.0, 2.0, 3.0, 4.0);
+        let c = Complex::new(1.0, 3.0);
+
+        let y = m.map(&c);
+        assert_eq!(y.re, 48.0 / 130.0);
+        assert_eq!(y.im, -6.0 / 130.0);
+    }
+
+    // TODO: further tests on action and group operations; test for preserving upper half plane for psl2
+    // assert!(y.im >= 0.0);
 }
