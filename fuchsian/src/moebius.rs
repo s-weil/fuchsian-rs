@@ -9,12 +9,10 @@ use std::{
 // TODO: consider https://docs.rs/katex-doc/latest/katex_doc/ or
 //  https://crates.io/crates/rust-latex-doc-minimal-example for math formulas
 
-/// See https://en.wikipedia.org/wiki/M%C3%B6bius_transformation
-///
-/// Corresponds to the 2x2 matrix
-/// `$ [a, b; c, d] $`
-/// acting on the complex plane $C$ via the function
+/// A [Moebius transformation](https://en.wikipedia.org/wiki/M%C3%B6bius_transformation) can be identified
+/// to a 2x2 matrix `$ [a, b; c, d] $` acting on the complex plane $C$ via the function
 /// `$ C \ni z -> f(z) = \frac{a*z + b}{cz + d} $`
+/// where the determinant of the matrix  `ad - bc != 0`.
 pub struct MoebiusTransformation<T> {
     pub a: T,
     pub b: T,

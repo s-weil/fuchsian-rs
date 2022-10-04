@@ -41,11 +41,10 @@
 
 use crate::algebraic_extensions::Group;
 
-pub trait FinitelyGeneratedGroup<M>
-where
-    M: Group,
-{
-    fn generators(&self) -> &[M];
+pub trait FinitelyGeneratedGroup {
+    type GroupElement: Group;
+
+    fn generators(&self) -> &[Self::GroupElement];
 }
 
 pub trait Action<Space> {
@@ -69,6 +68,8 @@ where
         g_hx.eq(&gh_x)
     }
 }
+
+// pub trait Orbit : FinitelyGeneratedGroup<M>
 
 // TODO:
 // - revisit trait definitions and required bounds
