@@ -6,7 +6,7 @@ use crate::{
     moebius::MoebiusTransformation,
 };
 use num_complex::Complex;
-use std::ops::{Deref, Div};
+use std::ops::{Add, Deref, Div, Mul};
 
 /// Helper:
 /// We identify MoebiusTransformations with the condition `determinant == 1` with the orientation preserving subset PSL(2,R) within 2x2 matrices.
@@ -181,7 +181,7 @@ impl<T> FuchsianGroup<T> {
 
 // TODO: bmk test with below implementation vs directly applied one
 /// Implement Action for float types on the complex plane.
-impl<T> Action<num_complex::Complex<T>> for MoebiusTransformation<T>
+impl<T> Action<Complex<T>> for MoebiusTransformation<T>
 where
     T: Numeric + Copy + PartialEq,
     Complex<T>: Div<Output = Complex<T>>,
@@ -201,7 +201,7 @@ where
 }
 
 /// Implement Action for float types on the complex plane.
-impl<T> Action<num_complex::Complex<T>> for ProjectedMoebiusTransformation<T>
+impl<T> Action<Complex<T>> for ProjectedMoebiusTransformation<T>
 where
     T: Numeric + Copy + PartialEq,
     Complex<T>: Div<Output = Complex<T>>,
@@ -211,16 +211,39 @@ where
     }
 }
 
+impl<T> Action<Complex<T>> for MoebiusTransformation<Complex<T>>
+where
+    Complex<T>:
+        Add<Output = Complex<T>> + Mul<Output = Complex<T>> + Div<Output = Complex<T>> + Clone,
+{
+    fn map(&self, x: &Complex<T>) -> Complex<T> {
+        let nom = self.a.clone() * x.clone() + self.b.clone();
+        let denom = self.c.clone() * x.clone() + self.d.clone();
+        // TODO: check for 0?
+        nom / denom
+    }
+}
+
+/// Implement Action for float types on the complex plane.
+impl<T> Action<Complex<T>> for ProjectedMoebiusTransformation<Complex<T>>
+where
+    Complex<T>:
+        Add<Output = Complex<T>> + Mul<Output = Complex<T>> + Div<Output = Complex<T>> + Clone,
+{
+    fn map(&self, x: &Complex<T>) -> Complex<T> {
+        (self.deref() as &MoebiusTransformation<Complex<T>>).map(x)
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use super::FuchsianGroup;
     use crate::{
         algebraic_extensions::Group, fuchsian_group::ProjectedMoebiusTransformation,
         group_dynamics::Action, moebius::MoebiusTransformation,
     };
     use approx::assert_abs_diff_eq;
     use num_complex::Complex;
-
-    use super::FuchsianGroup;
 
     #[test]
     fn test_projection() {
