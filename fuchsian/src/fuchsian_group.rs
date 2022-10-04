@@ -13,6 +13,7 @@ use std::ops::{Deref, Div};
 /// Due to mathematical limitations in rust we cannot model this condition, i.e. this subset, and hence
 /// use the wrapper `ProjectedMoebiusTransformation<_>` which checks the condition upon construction and assumes the condition.
 struct ProjectedMoebiusTransformation<T> {
+    /// Moebius transformation with determinat == 1
     m: MoebiusTransformation<T>,
 }
 
@@ -95,10 +96,10 @@ where
         // No need to check the determinant, since it is assumed to be 1.
         // See `MoebiusTransformation.inverse()` for the formula.
         let inverse = MoebiusTransformation::<T> {
-            a: *&self.m.d,
-            b: -*&self.m.b,
-            c: -*&self.m.c,
-            d: *&self.m.a,
+            a: self.m.d,
+            b: -self.m.b,
+            c: -self.m.c,
+            d: self.m.a,
         };
         Self { m: inverse }
     }
@@ -176,6 +177,7 @@ impl<T> FuchsianGroup<T> {
     }
 }
 
+// TODO: bmk test with below implementation vs directly applied one
 /// Implement Action for float types on the complex plane.
 impl<T> Action<num_complex::Complex<T>> for MoebiusTransformation<T>
 where
@@ -278,6 +280,18 @@ mod tests {
         let y = m.map(&c);
         assert_eq!(y.re, 48.0 / 130.0);
         assert_eq!(y.im, -6.0 / 130.0);
+    }
+
+    #[test]
+    fn test_orbit() {
+        // det == 1
+        let m = MoebiusTransformation::<f64>::new(3.0, 2.0, 4.0, 3.0);
+        let mut c = Complex::new(1.0, 3.0);
+
+        for _ in 0..100 {
+            c = m.map(&c);
+            assert!(c.im >= 0.0);
+        }
     }
 
     // TODO: further tests on action and group operations; test for preserving upper half plane for psl2

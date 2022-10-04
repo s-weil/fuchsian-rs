@@ -60,11 +60,11 @@ where
 {
     // how to model identities in general?
     fn identity_check(&self, x: &Space) -> bool {
-        ((&Group::identity() as &Self).map(&x)).eq(&x)
+        ((&Group::identity() as &Self).map(x)).eq(x)
     }
 
     fn compatibility_check(&self, h: &Self, x: &Space) -> bool {
-        let g_hx = self.map(&h.map(&x));
+        let g_hx = self.map(&h.map(x));
         let gh_x = (self.combine(h)).map(x); //.action(&g.combine(h), x);
         g_hx.eq(&gh_x)
     }
