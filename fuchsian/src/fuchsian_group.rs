@@ -308,7 +308,7 @@ mod tests {
     }
 
     #[test]
-    fn test_orbit() {
+    fn test_single_orbit() {
         // det == 1
         let m = MoebiusTransformation::<f64>::new(3.0, 2.0, 4.0, 3.0);
         let mut c = Complex::new(1.0, 3.0);
