@@ -44,6 +44,15 @@ where
     }
 }
 
+impl<T> Clone for SpecialLinear<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Self { m: self.m.clone() }
+    }
+}
+
 // TODO: revisit the trait bounds below; use only what is actually required!
 // TODO: realize ProjectiveSpecialLinear
 
@@ -120,6 +129,7 @@ where
 /// NOTE: for simplicity we will in the following restrict to the case of <i>finitely generated</i> Fuchsian groups.
 pub struct FuchsianGroup<T> {
     generators: Vec<SpecialLinear<T>>,
+    // inverse_generator: Vec<SpecialLinear<T>>,
 }
 
 impl<T> FinitelyGeneratedGroup for FuchsianGroup<T>
@@ -131,6 +141,10 @@ where
     fn generators(&self) -> &[Self::GroupElement] {
         &self.generators
     }
+
+    // fn inverse_generators(&self) -> &[Self::GroupElement] {
+    //     &self.inverse_generator
+    // }
 }
 
 impl<T> FuchsianGroup<T> {
@@ -243,11 +257,13 @@ where
 mod tests {
     use super::FuchsianGroup;
     use crate::{
-        algebraic_extensions::Group, fuchsian_group::SpecialLinear, group_dynamics::Action,
+        algebraic_extensions::Group,
+        fuchsian_group::{self, SpecialLinear},
+        group_dynamics::{Action, Orbit},
         moebius::MoebiusTransformation,
     };
     use approx::assert_abs_diff_eq;
-    use num_complex::Complex;
+    use num_complex::{Complex, Complex64};
 
     #[test]
     fn test_projection() {
@@ -282,22 +298,22 @@ mod tests {
         assert_abs_diff_eq!(pm5.unwrap().determinant(), 1.0, epsilon = f32::EPSILON);
     }
 
-    #[test]
-    fn test_projective() {
-        let one = MoebiusTransformation::<f32>::new(1.0, 0.0, 0.0, 1.0);
-        let minus_one = MoebiusTransformation::<f32>::new(-1.0, 0.0, 0.0, -1.0);
+    // #[test]
+    // fn test_projective() {
+    //     let one = MoebiusTransformation::<f32>::new(1.0, 0.0, 0.0, 1.0);
+    //     let minus_one = MoebiusTransformation::<f32>::new(-1.0, 0.0, 0.0, -1.0);
 
-        let one = SpecialLinear::try_from(one, None);
-        let minus_one = SpecialLinear::try_from(minus_one, None);
+    //     let one = SpecialLinear::try_from(one, None);
+    //     let minus_one = SpecialLinear::try_from(minus_one, None);
 
-        assert!(one.is_some());
-        assert!(minus_one.is_some());
+    //     assert!(one.is_some());
+    //     assert!(minus_one.is_some());
 
-        // assert_eq!(one.unwrap().a.clone(), minus_one.unwrap().a.clone());
-        assert_eq!(one.unwrap().a.clone(), minus_one.unwrap().a.clone());
-        // assert_eq!(one.unwrap().a, &minus_one.unwrap().a);
-        // assert_eq!(one.unwrap().a, &minus_one.unwrap().a);
-    }
+    //     // assert_eq!(one.unwrap().a.clone(), minus_one.unwrap().a.clone());
+    //     assert_eq!(one.unwrap().a.clone(), minus_one.unwrap().a.clone());
+    //     // assert_eq!(one.unwrap().a, &minus_one.unwrap().a);
+    //     // assert_eq!(one.unwrap().a, &minus_one.unwrap().a);
+    // }
 
     #[test]
     fn test_fuchsian_group() {
@@ -326,18 +342,6 @@ mod tests {
         let y = m.map(&c);
         assert_eq!(y.re, 48.0 / 130.0);
         assert_eq!(y.im, -6.0 / 130.0);
-    }
-
-    #[test]
-    fn test_single_orbit() {
-        // det == 1
-        let m = MoebiusTransformation::<f64>::new(3.0, 2.0, 4.0, 3.0);
-        let mut c = Complex::new(1.0, 3.0);
-
-        for _ in 0..100 {
-            c = m.map(&c);
-            assert!(c.im >= 0.0);
-        }
     }
 
     #[test]
@@ -371,6 +375,39 @@ mod tests {
 
         assert_abs_diff_eq!(y.re, c.re, epsilon = 1e-15);
         assert_abs_diff_eq!(y.im, c.im, epsilon = 1e-15);
+    }
+
+    #[test]
+    fn test_single_orbit() {
+        // det == 1
+        let m = MoebiusTransformation::<f64>::new(3.0, 2.0, 4.0, 3.0);
+        let mut c = Complex::new(1.0, 3.0);
+
+        for _ in 0..100 {
+            c = m.map(&c);
+            assert!(c.im >= 0.0);
+        }
+    }
+
+    #[test]
+    fn test_orbit() {
+        let g = MoebiusTransformation::<f64>::new(3.0, 1.0, 8.0, 3.0);
+        let h = MoebiusTransformation::<f64>::new(-3.0, 2.0, -5.0, 3.0);
+        // horocyclic
+        let j = MoebiusTransformation::<f64>::new(1.0, 10.0, 0.0, 1.0);
+
+        let fuchsian_group = FuchsianGroup::create_from_valid(vec![g, h, j]);
+
+        assert_eq!(fuchsian_group.generators.len(), 3);
+
+        let base_point = Complex64::new(1.0, 1.0);
+        let orbit = Orbit::create(&fuchsian_group, &base_point, 100, None);
+
+        assert_eq!(orbit.points.len(), 100);
+
+        for p in orbit.points {
+            assert!(p.im > 0.0);
+        }
     }
 
     // TODO: further tests on action and group operations; test for preserving upper half plane for psl2
