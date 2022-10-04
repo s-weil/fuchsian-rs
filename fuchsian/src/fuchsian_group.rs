@@ -76,6 +76,8 @@ impl<T> ProjectedMoebiusTransformation<T> {
     }
 }
 
+// TODO: impl TryFrom
+
 // Multiplicative group implementation for MoebiusTransformation with the restriction of determinant == 1.
 impl<T> Group for ProjectedMoebiusTransformation<T>
 where
@@ -128,8 +130,8 @@ where
 }
 
 impl<T> FuchsianGroup<T> {
-    /// Tries to create a `ProjectedMoebiusTransformation<T>` for each 'raw generator',
-    /// but filters for distinct `MoebiusTransformations<T>` with `determinant == 1`.
+    /// Tries to create a `ProjectedMoebiusTransformation<T>` for each 'raw generator'
+    /// of type `MoebiusTransformations<T>` satisfying `determinant == 1`.
     pub fn create_from_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self
     where
         T: Numeric + MulIdentity + PartialEq + Copy,
@@ -212,8 +214,8 @@ where
 #[cfg(test)]
 mod tests {
     use crate::{
-        fuchsian_group::ProjectedMoebiusTransformation, group_dynamics::Action,
-        moebius::MoebiusTransformation,
+        algebraic_extensions::Group, fuchsian_group::ProjectedMoebiusTransformation,
+        group_dynamics::Action, moebius::MoebiusTransformation,
     };
     use approx::assert_abs_diff_eq;
     use num_complex::Complex;
@@ -292,6 +294,41 @@ mod tests {
             c = m.map(&c);
             assert!(c.im >= 0.0);
         }
+    }
+
+    #[test]
+    fn test_compatibility() {
+        // det == 1
+        let g = ProjectedMoebiusTransformation::try_from(
+            MoebiusTransformation::<f64>::new(3.0, 2.0, 4.0, 3.0),
+            None,
+        );
+        let h = ProjectedMoebiusTransformation::try_from(
+            MoebiusTransformation::<f64>::new(-3.0, 2.0, -5.0, 3.0),
+            None,
+        );
+
+        assert!(g.is_some());
+        assert!(h.is_some());
+
+        let g = g.unwrap();
+        let h = h.unwrap();
+
+        let mut gh = ProjectedMoebiusTransformation::<f64>::identity();
+
+        let x = Complex::new(1.0, 3.0);
+        let mut c = x.clone();
+
+        for _ in 0..5 {
+            gh = gh.combine(&h).combine(&g);
+            c = g.map(&c);
+            c = h.map(&c);
+        }
+
+        let y = gh.map(&x);
+
+        assert_abs_diff_eq!(y.re, c.re, epsilon = 1e-15);
+        assert_abs_diff_eq!(y.im, c.im, epsilon = 1e-15);
     }
 
     // TODO: further tests on action and group operations; test for preserving upper half plane for psl2

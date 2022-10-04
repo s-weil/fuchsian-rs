@@ -9,12 +9,12 @@ use std::{
 // TODO: consider https://docs.rs/katex-doc/latest/katex_doc/ or
 //  https://crates.io/crates/rust-latex-doc-minimal-example for math formulas
 
-/// https://en.wikipedia.org/wiki/M%C3%B6bius_transformation
-/// Corresponds to the 2x2 matrix-vector multiplication of the matrix
-/// $[a, b; c, d] * [x; y]$
-/// for $[x; y]$ in the (real) Euclidean vector space.
-/// Corresponds to the complex-valued function
-/// $z complex -> f(z) = \frac{a*z + b}{cz + d}$
+/// See https://en.wikipedia.org/wiki/M%C3%B6bius_transformation
+///
+/// Corresponds to the 2x2 matrix
+/// `$ [a, b; c, d] $`
+/// acting on the complex plane $C$ via the function
+/// `$ C \ni z -> f(z) = \frac{a*z + b}{cz + d} $`
 pub struct MoebiusTransformation<T> {
     pub a: T,
     pub b: T,
