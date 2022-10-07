@@ -1,22 +1,47 @@
+use std::ops::Deref;
+
 use crate::{
     algebraic_extensions::{Group, MulIdentity},
     set_extensions::SetRestriction,
 };
 
 pub trait Determinant<T> {
-    fn determinant(&self) -> T;
+    fn det(&self) -> T;
 }
 
+/// We identify linear transformations satisfying the condition `determinant == 1` with the
+/// subset [SL(2,R)](https://en.wikipedia.org/wiki/SL2(R)) within 2x2 matrices.
+/// Due to mathematical limitations in rust we cannot model this condition,
+/// hence we check the condition upon construction (SetRestriction) and may assume the condition in the following.
 pub trait SpecialLinear<T>: Determinant<T> + SetRestriction {
-    fn restriction(s: &Self) -> bool
+    /// overwrite condition to satisfy `determinant == 1`
+    fn condition(&self) -> bool
     where
-        T: PartialEq,
-        Self: MulIdentity,
+        T: MulIdentity + PartialEq,
     {
-        let one: Self = MulIdentity::one();
-        s.determinant() == one.determinant()
+        self.det() == T::one()
     }
 }
+
+// pub trait SpecialLinear<T>: Determinant<T> + SetRestriction {
+//     fn restriction(&self) -> bool
+//     where
+//         T: PartialEq,
+//         Self: MulIdentity,
+//     {
+//         let one: Self = MulIdentity::one();
+//         &self.determinant() == one.determinant()
+//     }
+// }
+
+// impl<M, T> SetRestriction for M
+// where
+//     M: SpecialLinear<T>,
+// {
+//     fn restriction(s: &Self) -> bool {
+//         s.is_special_linear()
+//     }
+// }
 
 // use crate::algebraic_extensions::AddIdentity;
 // // The [mathematical group](https://en.wikipedia.org/wiki/Group_(mathematics)#Definition)
@@ -125,7 +150,7 @@ where
 
                     // TODO: precalculate inverses!
                     if self.cursor % (2 * self.generator_len) >= self.generator_len {
-                        item = item.inverse();
+                        item = item.inv();
                     }
 
                     self.cursor += 1;
@@ -142,6 +167,16 @@ where
 
 pub trait Action<Space> {
     fn map(&self, x: &Space) -> Space;
+}
+
+impl<Space, G, IG> Action<Space> for G
+where
+    G: Deref<Target = IG>,
+    IG: Action<Space>,
+{
+    fn map(&self, x: &Space) -> Space {
+        self.deref().map(x)
+    }
 }
 
 /// The mathematical (left) [group action](https://en.wikipedia.org/wiki/Group_action) of

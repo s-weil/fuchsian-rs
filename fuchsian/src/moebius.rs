@@ -2,7 +2,8 @@ use crate::{
     algebraic_extensions::{
         AddIdentity, Inverse, MulIdentity, Numeric, NumericAddIdentity, NumericMulIdentity,
     },
-    group_dynamics::Determinant,
+    group_action::{Determinant, SpecialLinear},
+    set_extensions::SetRestriction,
 };
 use std::{
     fmt,
@@ -265,13 +266,33 @@ where
     }
 }
 
+// ########################
+// Establish SpecialLinear trait for MoebiusTransformation.
+// This has no effect, only for creating them
+// ########################
+
 impl<T> Determinant<T> for MoebiusTransformation<T>
 where
     T: Numeric + std::marker::Copy,
 {
-    fn determinant(&self) -> T {
+    fn det(&self) -> T {
         self.determinant()
     }
+}
+
+impl<T> SetRestriction for MoebiusTransformation<T>
+where
+    T: MulIdentity + PartialEq,
+    MoebiusTransformation<T>: Determinant<T>,
+{
+    fn condition(&self) -> bool {
+        self.det() == T::one()
+    }
+}
+
+impl<T> SpecialLinear<T> for MoebiusTransformation<T> where
+    T: Numeric + MulIdentity + Copy + PartialEq
+{
 }
 
 #[cfg(test)]

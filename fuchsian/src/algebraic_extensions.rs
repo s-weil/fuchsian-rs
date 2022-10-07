@@ -1,4 +1,4 @@
-use std::ops::{Add, Div, Mul, Neg};
+use std::ops::{Add, Deref, Div, Mul, Neg};
 
 /// Mimic some features of a ring, without ring axioms (Abelian group, Associativity, Distributivity)
 pub trait Numeric:
@@ -79,6 +79,26 @@ pub trait MuliplicativeNumeric:
 // ///     }
 // /// }
 // /// ```
+// pub trait Group: PartialEq + Sized {
+//     type GroupElement;
+
+//     /// The binary operation.
+//     fn combine(&self, other: &Self) -> Self::GroupElement;
+
+//     /// The identity element.
+//     fn identity() -> Self::GroupElement;
+
+//     /// The inverse element.
+//     fn inverse(&self) -> Self::GroupElement;
+
+//     // how to model identities in general?
+//     // fn associativity_check(&self, b: &Self, c: &Self) -> bool {
+//     //     let ab_c = self.combine(b).combine(c);
+//     //     let a_bc = self.combine(&b.combine(c));
+//     //     ab_c == a_bc
+//     // }
+// }
+
 pub trait Group: PartialEq + Sized {
     /// The binary operation.
     fn combine(&self, other: &Self) -> Self;
@@ -87,7 +107,7 @@ pub trait Group: PartialEq + Sized {
     fn identity() -> Self;
 
     /// The inverse element.
-    fn inverse(&self) -> Self;
+    fn inv(&self) -> Self;
 
     // how to model identities in general?
     fn associativity_check(&self, b: &Self, c: &Self) -> bool {
@@ -96,6 +116,25 @@ pub trait Group: PartialEq + Sized {
         ab_c == a_bc
     }
 }
+
+/// Implement Group for Wrapper types containing a group as element
+// impl<M, S> Group for M
+// where
+//     S: Group,
+//     M: From<S> + Deref<Target = S> /* =Wrapper<S> */ + PartialEq + Sized,
+// {
+//     fn combine(&self, other: &Self) -> Self {
+//         self.deref().combine(other.deref()).into()
+//     }
+
+//     fn identity() -> Self {
+//         S::identity().into()
+//     }
+
+//     fn inverse(&self) -> Self {
+//         self.deref().inv().into()
+//     }
+// }
 
 #[macro_export]
 macro_rules! impl_add_identity {

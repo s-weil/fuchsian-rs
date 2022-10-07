@@ -2,61 +2,82 @@ use crate::{
     algebraic_extensions::{
         Group, IsPositive, MulIdentity, Numeric, NumericAddIdentity, SquareRoot,
     },
-    group_dynamics::{Action, FinitelyGeneratedGroup},
+    group_action::{Action, Determinant, FinitelyGeneratedGroup, SpecialLinear},
     moebius::MoebiusTransformation,
+    set_extensions::{SetRestriction, Wrapper},
 };
 use num_complex::Complex;
-use std::ops::{Add, Deref, Div, Mul};
+use std::ops::{Add, Deref, Div, Mul, Neg};
+
+/// Multiplicative group implementation for MoebiusTransformation satisfying determinant == 1.
+impl<T> Group for MoebiusTransformation<T>
+where
+    Self: SpecialLinear<T> + MulIdentity + Mul<Output = MoebiusTransformation<T>> + Clone,
+    T: PartialEq + Clone + Neg<Output = T>,
+{
+    fn combine(&self, other: &Self) -> MoebiusTransformation<T> {
+        self.clone() * other.clone()
+    }
+
+    fn identity() -> Self {
+        Self::one()
+    }
+
+    fn inv(&self) -> Self {
+        // No need to check the determinant, since it is assumed to be 1.
+        // See `MoebiusTransformation.inverse()` for the formula.
+        let inverse = MoebiusTransformation::<T> {
+            a: self.d.clone(),
+            b: -self.b.clone(),
+            c: -self.c.clone(),
+            d: self.a.clone(),
+        };
+        inverse
+    }
+}
+
+// Multiplicative group implementation for MoebiusTransformation satisfying determinant == 1.
+// impl<M, T> Group for M
+// where
+//     M: Deref<Target = MoebiusTransformation<T>>,
+//     MoebiusTransformation<T>:
+//         SpecialLinear<T> + MulIdentity + Mul<Output = MoebiusTransformation<T>> + Clone,
+//     T: PartialEq + Clone + Neg<Output = T>,
+// {
+//     type GroupElement = MoebiusTransformation<T>;
+
+//     fn combine(&self, other: &Self) -> MoebiusTransformation<T> {
+//         self.deref().clone() * other.deref().clone()
+//     }
+
+//     fn identity() -> Self {
+//         Self::one()
+//     }
+
+//     fn inverse(&self) -> Self {
+//         // No need to check the determinant, since it is assumed to be 1.
+//         // See `MoebiusTransformation.inverse()` for the formula.
+//         let inverse = MoebiusTransformation::<T> {
+//             a: self.d.clone(),
+//             b: -self.b.clone(),
+//             c: -self.c.clone(),
+//             d: self.a.clone(),
+//         };
+//         inverse
+//     }
+// }
 
 /// Helper:
 /// We identify Moebius transformations satisfying the condition `determinant == 1` with the
 /// subset [SL(2,R)](https://en.wikipedia.org/wiki/SL2(R)) within 2x2 matrices.
 /// Due to mathematical limitations in rust we cannot model this condition, i.e. this subset, and hence
-/// use the wrapper `ProjectedMoebiusTransformation<_>` which checks the condition upon construction and assumes the condition.
-pub struct SpecialLinear<T> {
-    /// Moebius transformation with determinat == 1
+/// use the wrapper `SpecialLinearMoebiusTransformation<_>` which checks the condition upon construction and assumes the condition.
+pub struct SpecialLinearMoebiusTransformation<T> {
+    /// Moebius transformation with determinant == 1
     m: MoebiusTransformation<T>,
 }
 
-impl<T> Deref for SpecialLinear<T> {
-    type Target = MoebiusTransformation<T>;
-    fn deref(&self) -> &Self::Target {
-        &self.m
-    }
-}
-
-impl<T> PartialEq for SpecialLinear<T>
-where
-    MoebiusTransformation<T>: PartialEq,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.m == other.m
-    }
-}
-
-impl<T> Eq for SpecialLinear<T> where MoebiusTransformation<T>: PartialEq {}
-impl<T> std::hash::Hash for SpecialLinear<T>
-where
-    MoebiusTransformation<T>: std::hash::Hash,
-{
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.m.hash(state);
-    }
-}
-
-impl<T> Clone for SpecialLinear<T>
-where
-    T: Clone,
-{
-    fn clone(&self) -> Self {
-        Self { m: self.m.clone() }
-    }
-}
-
-// TODO: revisit the trait bounds below; use only what is actually required!
-// TODO: realize ProjectiveSpecialLinear
-
-impl<T> SpecialLinear<T> {
+impl<T> SpecialLinearMoebiusTransformation<T> {
     fn rescale(&self, positive_determinant: T) -> Self
     where
         T: Numeric + Div<Output = T> + MulIdentity + SquareRoot + Copy,
@@ -87,10 +108,97 @@ impl<T> SpecialLinear<T> {
     }
 }
 
-// TODO: impl TryFrom
+impl<T> Deref for SpecialLinearMoebiusTransformation<T> {
+    type Target = MoebiusTransformation<T>;
+    fn deref(&self) -> &Self::Target {
+        &self.m
+    }
+}
+
+impl<T> From<MoebiusTransformation<T>> for SpecialLinearMoebiusTransformation<T>
+where
+    MoebiusTransformation<T>: SpecialLinear<T>,
+{
+    fn from(m: MoebiusTransformation<T>) -> Self
+    where
+        MoebiusTransformation<T>: SpecialLinear<T>,
+    {
+        Self { m }
+    }
+}
+
+/// NOTE: `SpecialLinearMoebiusTransformation<T>` as wrapper of `MoebiusTransformation<T>` satisfying `SpecialLinear`
+/// will hence implement Group under relevant trait bounds, see `algebraic_extensions.rs`
+impl<T> Wrapper<MoebiusTransformation<T>> for SpecialLinearMoebiusTransformation<T> where
+    MoebiusTransformation<T>: SpecialLinear<T>
+{
+}
+
+impl<T> Determinant<T> for SpecialLinearMoebiusTransformation<T>
+where
+    T: Numeric + std::marker::Copy,
+{
+    fn det(&self) -> T {
+        self.deref().determinant()
+    }
+}
+
+impl<T> SetRestriction for SpecialLinearMoebiusTransformation<T>
+where
+    T: Numeric + MulIdentity + Copy + PartialEq,
+{
+    fn condition(&self) -> bool {
+        self.det() == T::one()
+    }
+}
+
+impl<T> SpecialLinear<T> for SpecialLinearMoebiusTransformation<T> where
+    T: Numeric + MulIdentity + Copy + PartialEq
+{
+}
+
+impl<T> PartialEq for SpecialLinearMoebiusTransformation<T>
+where
+    MoebiusTransformation<T>: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        self.m == other.m
+    }
+}
+
+impl<T> Eq for SpecialLinearMoebiusTransformation<T> where MoebiusTransformation<T>: PartialEq {}
+impl<T> std::hash::Hash for SpecialLinearMoebiusTransformation<T>
+where
+    MoebiusTransformation<T>: std::hash::Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.m.hash(state);
+    }
+}
+
+// impl<T> Group for SpecialLinearMoebiusTransformation<T>
+// where
+//     MoebiusTransformation<T>: Group,
+//     SpecialLinearMoebiusTransformation<T>: From<MoebiusTransformation<T>>
+//         + Deref<Target = MoebiusTransformation<T>>
+//         + PartialEq
+//         + Sized,
+// {
+//     fn combine(&self, other: &Self) -> Self {
+//         self.deref().combine(other.deref()).into()
+//     }
+
+//     fn identity() -> Self {
+//         MoebiusTransformation::identity().into()
+//     }
+
+//     fn inv(&self) -> Self {
+//         self.deref().inv().into()
+//     }
+// }
 
 // Multiplicative group implementation for MoebiusTransformation with the restriction of determinant == 1.
-impl<T> Group for SpecialLinear<T>
+impl<T> Group for SpecialLinearMoebiusTransformation<T>
 where
     T: Numeric + MulIdentity + Copy + PartialEq,
 {
@@ -105,7 +213,7 @@ where
         Self { m: one }
     }
 
-    fn inverse(&self) -> Self {
+    fn inv(&self) -> Self {
         // No need to check the determinant, since it is assumed to be 1.
         // See `MoebiusTransformation.inverse()` for the formula.
         let inverse = MoebiusTransformation::<T> {
@@ -118,6 +226,140 @@ where
     }
 }
 
+// impl<T> Group for SpecialLinearMoebiusTransformation<T>
+// where
+//     MoebiusTransformation<T>: Group + SpecialLinear<T>,
+//     // T: Numeric + MulIdentity + Copy + PartialEq, // Self: SpecialLinear<T> + MulIdentity + Mul<Output = MoebiusTransformation<T>> + Clone,
+//     // T: PartialEq + Clone + Neg<Output = T>,
+// {
+//     fn combine(&self, other: &Self) -> Self {
+//         self.deref().combine(other.deref()).into()
+//     }
+
+//     fn identity() -> Self {
+//         MoebiusTransformation::<T>::identity().into()
+//     }
+
+//     fn inverse(&self) -> Self {
+//         let m = self.deref();
+//         m.inverse().into()
+//     }
+// }
+
+// where
+//     Self: SpecialLinear<T> + MulIdentity + Mul<Output = MoebiusTransformation<T>> + Clone,
+//     T: PartialEq + Clone + Neg<Output = T>,
+
+// /// Helper:
+// /// We identify Moebius transformations satisfying the condition `determinant == 1` with the
+// /// subset [SL(2,R)](https://en.wikipedia.org/wiki/SL2(R)) within 2x2 matrices.
+// /// Due to mathematical limitations in rust we cannot model this condition, i.e. this subset, and hence
+// /// use the wrapper `ProjectedMoebiusTransformation<_>` which checks the condition upon construction and assumes the condition.
+// pub struct SpecialLinear<T> {
+//     /// Moebius transformation with determinat == 1
+//     m: MoebiusTransformation<T>,
+// }
+
+// impl<T> Deref for SpecialLinear<T> {
+//     type Target = MoebiusTransformation<T>;
+//     fn deref(&self) -> &Self::Target {
+//         &self.m
+//     }
+// }
+
+// impl<T> PartialEq for SpecialLinear<T>
+// where
+//     MoebiusTransformation<T>: PartialEq,
+// {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.m == other.m
+//     }
+// }
+
+// impl<T> Eq for SpecialLinear<T> where MoebiusTransformation<T>: PartialEq {}
+// impl<T> std::hash::Hash for SpecialLinear<T>
+// where
+//     MoebiusTransformation<T>: std::hash::Hash,
+// {
+//     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+//         self.m.hash(state);
+//     }
+// }
+
+impl<T> Clone for SpecialLinearMoebiusTransformation<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> Self {
+        Self { m: self.m.clone() }
+    }
+}
+
+// // TODO: revisit the trait bounds below; use only what is actually required!
+// // TODO: realize ProjectiveSpecialLinear
+
+// impl<T> SpecialLinear<T> {
+//     fn rescale(&self, positive_determinant: T) -> Self
+//     where
+//         T: Numeric + Div<Output = T> + MulIdentity + SquareRoot + Copy,
+//     {
+//         let scalar = T::one() / positive_determinant.square_root();
+//         Self { m: self.m * scalar }
+//     }
+
+//     /// impl `TryFrom` but with a numeric threshold to check and option as result.
+//     pub fn try_from(m: MoebiusTransformation<T>, numeric_threshold: Option<f64>) -> Option<Self>
+//     where
+//         T: Numeric
+//             + NumericAddIdentity
+//             + Div<Output = T>
+//             + MulIdentity
+//             + SquareRoot
+//             + IsPositive
+//             + Copy,
+//     {
+//         if m.is_invertible(numeric_threshold) {
+//             let determinant = m.determinant();
+//             if determinant.is_positive() {
+//                 let s = Self { m };
+//                 return Some(s.rescale(determinant));
+//             }
+//         }
+//         None
+//     }
+// }
+
+// // TODO: impl TryFrom
+
+// // Multiplicative group implementation for MoebiusTransformation with the restriction of determinant == 1.
+// impl<T> Group for SpecialLinear<T>
+// where
+//     T: Numeric + MulIdentity + Copy + PartialEq,
+// {
+//     fn combine(&self, other: &Self) -> Self {
+//         let m1 = self.m;
+//         let m2 = other.m;
+//         Self { m: m1 * m2 }
+//     }
+
+//     fn identity() -> Self {
+//         let one = MoebiusTransformation::one();
+//         Self { m: one }
+//     }
+
+//     fn inverse(&self) -> Self {
+//         // No need to check the determinant, since it is assumed to be 1.
+//         // See `MoebiusTransformation.inverse()` for the formula.
+//         let inverse = MoebiusTransformation::<T> {
+//             a: self.m.d,
+//             b: -self.m.b,
+//             c: -self.m.c,
+//             d: self.m.a,
+//         };
+//         Self { m: inverse }
+//     }
+// }
+
 /// From [wikipedia](https://en.wikipedia.org/wiki/Fuchsian_group):
 /// In mathematics, a Fuchsian group is a discrete subgroup of PSL(2,R).
 /// The group PSL(2,R) can be regarded equivalently as a group of isometries of the hyperbolic plane, or conformal transformations of the unit disc, or conformal transformations of the upper half plane, so a Fuchsian group can be regarded as a group acting on any of these spaces.
@@ -128,15 +370,15 @@ where
 ///
 /// NOTE: for simplicity we will in the following restrict to the case of <i>finitely generated</i> Fuchsian groups.
 pub struct FuchsianGroup<T> {
-    generators: Vec<SpecialLinear<T>>,
+    generators: Vec<SpecialLinearMoebiusTransformation<T>>,
     // inverse_generator: Vec<SpecialLinear<T>>,
 }
 
 impl<T> FinitelyGeneratedGroup for FuchsianGroup<T>
 where
-    SpecialLinear<T>: Group,
+    SpecialLinearMoebiusTransformation<T>: Group,
 {
-    type GroupElement = SpecialLinear<T>;
+    type GroupElement = SpecialLinearMoebiusTransformation<T>;
 
     fn generators(&self) -> &[Self::GroupElement] {
         &self.generators
@@ -157,10 +399,9 @@ impl<T> FuchsianGroup<T> {
     {
         let mut generators = Vec::new();
 
-        let one = T::one();
         for m in raw_generators.into_iter() {
-            if m.determinant() == one {
-                generators.push(SpecialLinear { m });
+            if m.determinant() == T::one() {
+                generators.push(SpecialLinearMoebiusTransformation { m });
             }
         }
 
@@ -191,8 +432,8 @@ impl<T> FuchsianGroup<T> {
         // TODO: filter out duplicates
         let generators = raw_generators
             .into_iter()
-            .flat_map(|m| SpecialLinear::<T>::try_from(m, numeric_threshold))
-            .collect::<Vec<SpecialLinear<T>>>();
+            .flat_map(|m| SpecialLinearMoebiusTransformation::<T>::try_from(m, numeric_threshold))
+            .collect::<Vec<SpecialLinearMoebiusTransformation<T>>>();
         Self { generators }
     }
 }
@@ -218,16 +459,16 @@ where
     }
 }
 
-/// Implement Action for float types on the complex plane.
-impl<T> Action<Complex<T>> for SpecialLinear<T>
-where
-    T: Numeric + Copy + PartialEq,
-    Complex<T>: Div<Output = Complex<T>>,
-{
-    fn map(&self, x: &Complex<T>) -> Complex<T> {
-        (self.deref() as &MoebiusTransformation<T>).map(x)
-    }
-}
+// /// Implement Action for float types on the complex plane.
+// impl<T> Action<Complex<T>> for SpecialLinear<T>
+// where
+//     T: Numeric + Copy + PartialEq,
+//     Complex<T>: Div<Output = Complex<T>>,
+// {
+//     fn map(&self, x: &Complex<T>) -> Complex<T> {
+//         (self.deref() as &MoebiusTransformation<T>).map(x)
+//     }
+// }
 
 impl<T> Action<Complex<T>> for MoebiusTransformation<Complex<T>>
 where
@@ -242,24 +483,24 @@ where
     }
 }
 
-/// Implement Action for float types on the complex plane.
-impl<T> Action<Complex<T>> for SpecialLinear<Complex<T>>
-where
-    Complex<T>:
-        Add<Output = Complex<T>> + Mul<Output = Complex<T>> + Div<Output = Complex<T>> + Clone,
-{
-    fn map(&self, x: &Complex<T>) -> Complex<T> {
-        (self.deref() as &MoebiusTransformation<Complex<T>>).map(x)
-    }
-}
+// /// Implement Action for float types on the complex plane.
+// impl<T> Action<Complex<T>> for SpecialLinear<Complex<T>>
+// where
+//     Complex<T>:
+//         Add<Output = Complex<T>> + Mul<Output = Complex<T>> + Div<Output = Complex<T>> + Clone,
+// {
+//     fn map(&self, x: &Complex<T>) -> Complex<T> {
+//         (self.deref() as &MoebiusTransformation<Complex<T>>).map(x)
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
     use super::FuchsianGroup;
     use crate::{
         algebraic_extensions::Group,
-        fuchsian_group::{self, SpecialLinear},
-        group_dynamics::{Action, Orbit},
+        fuchsian_group::{self, SpecialLinear, SpecialLinearMoebiusTransformation},
+        group_action::{Action, Orbit},
         moebius::MoebiusTransformation,
     };
     use approx::assert_abs_diff_eq;
@@ -270,12 +511,12 @@ mod tests {
         // not orentiation preserving
         let m1 = MoebiusTransformation::<f32>::new(1.0, 2.0, 3.0, 4.0);
         assert_eq!(m1.determinant(), -2.0);
-        let pm1 = SpecialLinear::try_from(m1, None);
+        let pm1 = SpecialLinearMoebiusTransformation::try_from(m1, None);
         assert!(pm1.is_none());
 
         let m2 = MoebiusTransformation::<f32>::new(-1.0, -2.0, 3.0, 4.0);
         assert_eq!(m2.determinant(), 2.0);
-        let pm2 = SpecialLinear::try_from(m2, None);
+        let pm2 = SpecialLinearMoebiusTransformation::try_from(m2, None);
         assert!(pm2.is_some());
         assert_abs_diff_eq!(pm2.unwrap().determinant(), 1.0, epsilon = f32::EPSILON);
 
@@ -287,13 +528,13 @@ mod tests {
             3.000000000001,
         );
         assert_eq!(m4.determinant(), 3.3000002);
-        let pm4 = SpecialLinear::try_from(m4, None);
+        let pm4 = SpecialLinearMoebiusTransformation::try_from(m4, None);
         assert!(pm4.is_some());
         assert_abs_diff_eq!(pm4.unwrap().determinant(), 1.0, epsilon = f32::EPSILON);
 
         let m5 = MoebiusTransformation::<f32>::new(0.0002, -0.0007, 0.005, 0.001);
         assert_eq!(m5.determinant(), 3.6999998e-6);
-        let pm5 = SpecialLinear::try_from(m5, None);
+        let pm5 = SpecialLinearMoebiusTransformation::try_from(m5, None);
         assert!(pm5.is_some());
         assert_abs_diff_eq!(pm5.unwrap().determinant(), 1.0, epsilon = f32::EPSILON);
     }
@@ -303,8 +544,8 @@ mod tests {
     //     let one = MoebiusTransformation::<f32>::new(1.0, 0.0, 0.0, 1.0);
     //     let minus_one = MoebiusTransformation::<f32>::new(-1.0, 0.0, 0.0, -1.0);
 
-    //     let one = SpecialLinear::try_from(one, None);
-    //     let minus_one = SpecialLinear::try_from(minus_one, None);
+    //     let one = SpecialLinearMoebiusTransformation::try_from(one, None);
+    //     let minus_one = SpecialLinearMoebiusTransformation::try_from(minus_one, None);
 
     //     assert!(one.is_some());
     //     assert!(minus_one.is_some());
@@ -347,9 +588,11 @@ mod tests {
     #[test]
     fn test_compatibility() {
         // det == 1
-        let g =
-            SpecialLinear::try_from(MoebiusTransformation::<f64>::new(3.0, 2.0, 4.0, 3.0), None);
-        let h = SpecialLinear::try_from(
+        let g = SpecialLinearMoebiusTransformation::try_from(
+            MoebiusTransformation::<f64>::new(3.0, 2.0, 4.0, 3.0),
+            None,
+        );
+        let h = SpecialLinearMoebiusTransformation::try_from(
             MoebiusTransformation::<f64>::new(-3.0, 2.0, -5.0, 3.0),
             None,
         );
@@ -360,7 +603,7 @@ mod tests {
         let g = g.unwrap();
         let h = h.unwrap();
 
-        let mut gh = SpecialLinear::<f64>::identity();
+        let mut gh = SpecialLinearMoebiusTransformation::<f64>::identity();
 
         let x = Complex::new(1.0, 3.0);
         let mut c = x.clone();
