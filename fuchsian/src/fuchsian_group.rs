@@ -211,27 +211,21 @@ impl<T> FuchsianGroup<T>
 where
     MoebiusTransformation<T>: SpecialLinear<T>,
 {
-    // TODO: add this
-    // pub fn try_push(&mut self, moebius: MoebiusTransformation<T>) -> bool {
-    //     if m.condition() {
-    //         self.generators.as_mut().push(moebius)
-    //     }
-    //     false
-    // }
+    pub fn try_push(&mut self, m: MoebiusTransformation<T>) -> bool {
+        if let Some(slm) = MoebiusTransformation::try_new(m) {
+            self.generators.push(slm)
+        }
+        false
+    }
 
     /// Tries to create a `ProjectedMoebiusTransformation<T>` for each 'raw generator'
     /// of type `MoebiusTransformations<T>` satisfying `determinant == 1`.
-    pub fn create_from_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self
-    where
-        T: Numeric + MulIdentity + PartialEq + Copy,
-        MoebiusTransformation<T>: PartialEq,
-    {
+    pub fn create_from_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self {
         let mut generators = Vec::new();
 
         for m in raw_generators.into_iter() {
-            // TODO; use SpecialLinear condition here!
-            if m.determinant() == T::one() {
-                generators.push(m);
+            if let Some(slm) = MoebiusTransformation::try_new(m) {
+                generators.push(slm)
             }
         }
 
@@ -318,7 +312,7 @@ mod tests {
     use super::FuchsianGroup;
     use crate::{
         algebraic_extensions::Group,
-        fuchsian_group::{self, SpecialLinear, SpecialLinearMoebiusTransformation},
+        fuchsian_group::SpecialLinearMoebiusTransformation,
         group_action::{Action, Orbit},
         moebius::MoebiusTransformation,
     };
