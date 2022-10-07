@@ -1,5 +1,7 @@
 use std::ops::{Add, Deref, Div, Mul, Neg};
 
+use crate::set_extensions::Wrapper;
+
 /// Mimic some features of a ring, without ring axioms (Abelian group, Associativity, Distributivity)
 pub trait Numeric:
     Sized + AddIdentity + Add<Output = Self> + Mul<Output = Self> + Neg<Output = Self>
@@ -118,23 +120,23 @@ pub trait Group: PartialEq + Sized {
 }
 
 /// Implement Group for Wrapper types containing a group as element
-// impl<M, S> Group for M
-// where
-//     S: Group,
-//     M: From<S> + Deref<Target = S> /* =Wrapper<S> */ + PartialEq + Sized,
-// {
-//     fn combine(&self, other: &Self) -> Self {
-//         self.deref().combine(other.deref()).into()
-//     }
+impl<M, S> Group for M
+where
+    S: Group,
+    M: Wrapper<Inner = S> + PartialEq + Sized,
+{
+    fn combine(&self, other: &Self) -> Self {
+        self.deref().combine(other.deref()).into()
+    }
 
-//     fn identity() -> Self {
-//         S::identity().into()
-//     }
+    fn identity() -> Self {
+        S::identity().into()
+    }
 
-//     fn inverse(&self) -> Self {
-//         self.deref().inv().into()
-//     }
-// }
+    fn inv(&self) -> Self {
+        self.deref().inv().into()
+    }
+}
 
 #[macro_export]
 macro_rules! impl_add_identity {

@@ -123,37 +123,37 @@ where
     where
         MoebiusTransformation<T>: SpecialLinear<T>,
     {
-        Self { m }
+        Self {
+            m: MoebiusTransformation::try_new(m).unwrap(),
+        }
     }
 }
 
 /// NOTE: `SpecialLinearMoebiusTransformation<T>` as wrapper of `MoebiusTransformation<T>` satisfying `SpecialLinear`
 /// will hence implement Group under relevant trait bounds, see `algebraic_extensions.rs`
-impl<T> Wrapper<MoebiusTransformation<T>> for SpecialLinearMoebiusTransformation<T> where
-    MoebiusTransformation<T>: SpecialLinear<T>
-{
-}
+// impl<T> Wrapper<MoebiusTransformation<T>> for SpecialLinearMoebiusTransformation<T> where
+//     MoebiusTransformation<T>: SpecialLinear<T>
+// {
+// }
 
-impl<T> Determinant<T> for SpecialLinearMoebiusTransformation<T>
-where
-    T: Numeric + std::marker::Copy,
-{
-    fn det(&self) -> T {
-        self.deref().determinant()
-    }
-}
+// impl<T> Determinant<T> for SpecialLinearMoebiusTransformation<T>
+// where
+//     T: Numeric + std::marker::Copy,
+// {
+//     fn det(&self) -> T {
+//         self.deref().determinant()
+//     }
+// }
 
-impl<T> SetRestriction for SpecialLinearMoebiusTransformation<T>
+impl<T> Wrapper for SpecialLinearMoebiusTransformation<T>
 where
-    T: Numeric + MulIdentity + Copy + PartialEq,
+    MoebiusTransformation<T>: SpecialLinear<T>,
 {
-    fn condition(&self) -> bool {
-        self.det() == T::one()
-    }
+    type Inner = MoebiusTransformation<T>;
 }
 
 impl<T> SpecialLinear<T> for SpecialLinearMoebiusTransformation<T> where
-    T: Numeric + MulIdentity + Copy + PartialEq
+    MoebiusTransformation<T>: SpecialLinear<T>
 {
 }
 
@@ -198,33 +198,33 @@ where
 // }
 
 // Multiplicative group implementation for MoebiusTransformation with the restriction of determinant == 1.
-impl<T> Group for SpecialLinearMoebiusTransformation<T>
-where
-    T: Numeric + MulIdentity + Copy + PartialEq,
-{
-    fn combine(&self, other: &Self) -> Self {
-        let m1 = self.m;
-        let m2 = other.m;
-        Self { m: m1 * m2 }
-    }
+// impl<T> Group for SpecialLinearMoebiusTransformation<T>
+// where
+//     T: Numeric + MulIdentity + Copy + PartialEq,
+// {
+//     fn combine(&self, other: &Self) -> Self {
+//         let m1 = self.m;
+//         let m2 = other.m;
+//         Self { m: m1 * m2 }
+//     }
 
-    fn identity() -> Self {
-        let one = MoebiusTransformation::one();
-        Self { m: one }
-    }
+//     fn identity() -> Self {
+//         let one = MoebiusTransformation::one();
+//         Self { m: one }
+//     }
 
-    fn inv(&self) -> Self {
-        // No need to check the determinant, since it is assumed to be 1.
-        // See `MoebiusTransformation.inverse()` for the formula.
-        let inverse = MoebiusTransformation::<T> {
-            a: self.m.d,
-            b: -self.m.b,
-            c: -self.m.c,
-            d: self.m.a,
-        };
-        Self { m: inverse }
-    }
-}
+//     fn inv(&self) -> Self {
+//         // No need to check the determinant, since it is assumed to be 1.
+//         // See `MoebiusTransformation.inverse()` for the formula.
+//         let inverse = MoebiusTransformation::<T> {
+//             a: self.m.d,
+//             b: -self.m.b,
+//             c: -self.m.c,
+//             d: self.m.a,
+//         };
+//         Self { m: inverse }
+//     }
+// }
 
 // impl<T> Group for SpecialLinearMoebiusTransformation<T>
 // where

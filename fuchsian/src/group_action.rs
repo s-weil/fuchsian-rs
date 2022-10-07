@@ -2,11 +2,21 @@ use std::ops::Deref;
 
 use crate::{
     algebraic_extensions::{Group, MulIdentity},
-    set_extensions::SetRestriction,
+    set_extensions::{SetRestriction, Wrapper},
 };
 
 pub trait Determinant<T> {
     fn det(&self) -> T;
+}
+
+impl<M, S, T> Determinant<T> for M
+where
+    M: Wrapper<Inner = S>,
+    S: Determinant<T>,
+{
+    fn det(&self) -> T {
+        self.deref().det()
+    }
 }
 
 /// We identify linear transformations satisfying the condition `determinant == 1` with the
@@ -21,7 +31,20 @@ pub trait SpecialLinear<T>: Determinant<T> + SetRestriction {
     {
         self.det() == T::one()
     }
+    // TODO: check if overwrite actually works
 }
+
+// impl<M, S, T> SpecialLinear<T> for M
+// where
+//     M: Wrapper<Inner = S>,
+//     S: SpecialLinear<T>,
+// {
+//     fn condition(&self) -> bool {
+//         let d: &S = self.deref();
+//         SpecialLinear::condition(d)
+//         // d.condition()
+//     }
+// }
 
 // pub trait SpecialLinear<T>: Determinant<T> + SetRestriction {
 //     fn restriction(&self) -> bool
