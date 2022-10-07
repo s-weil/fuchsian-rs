@@ -1,4 +1,4 @@
-use std::ops::{Add, Deref, Div, Mul, Neg};
+use std::ops::{Add, Div, Mul, Neg};
 
 use crate::set_extensions::Wrapper;
 

@@ -2,8 +2,8 @@ use crate::{
     algebraic_extensions::{
         Group, IsPositive, MulIdentity, Numeric, NumericAddIdentity, SquareRoot,
     },
-    group_action::{Action, Determinant, FinitelyGeneratedGroup, SpecialLinear},
-    moebius::{self, MoebiusTransformation},
+    group_action::{Action, FinitelyGeneratedGroup, SpecialLinear},
+    moebius::{MoebiusTransformation},
     set_extensions::{SetRestriction, Wrapper},
 };
 use num_complex::Complex;
