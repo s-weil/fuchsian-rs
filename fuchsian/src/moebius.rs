@@ -1,5 +1,8 @@
-use crate::algebraic_extensions::{
-    AddIdentity, Inverse, MulIdentity, Numeric, NumericAddIdentity, NumericMulIdentity,
+use crate::{
+    algebraic_extensions::{
+        AddIdentity, Inverse, MulIdentity, Numeric, NumericAddIdentity, NumericMulIdentity,
+    },
+    group_dynamics::Determinant,
 };
 use std::{
     fmt,
@@ -259,6 +262,15 @@ where
             return Ok(m);
         }
         Err("Moebius transformation is not invertible. Determinant smaller than 1e-16")
+    }
+}
+
+impl<T> Determinant<T> for MoebiusTransformation<T>
+where
+    T: Numeric + std::marker::Copy,
+{
+    fn determinant(&self) -> T {
+        self.determinant()
     }
 }
 

@@ -1,3 +1,23 @@
+use crate::{
+    algebraic_extensions::{Group, MulIdentity},
+    set_extensions::SetRestriction,
+};
+
+pub trait Determinant<T> {
+    fn determinant(&self) -> T;
+}
+
+pub trait SpecialLinear<T>: Determinant<T> + SetRestriction {
+    fn restriction(s: &Self) -> bool
+    where
+        T: PartialEq,
+        Self: MulIdentity,
+    {
+        let one: Self = MulIdentity::one();
+        s.determinant() == one.determinant()
+    }
+}
+
 // use crate::algebraic_extensions::AddIdentity;
 // // The [mathematical group](https://en.wikipedia.org/wiki/Group_(mathematics)#Definition)
 // // definition except for the associativity identity.
@@ -38,8 +58,6 @@
 //         ab_c == a_bc
 //     }
 // }
-
-use crate::algebraic_extensions::Group;
 
 /// A [finitely generated group](https://en.wikipedia.org/wiki/Finitely_generated_group) `G` has
 /// some finite generating set so that every `g \in G`can be written as a finite combination
@@ -105,6 +123,7 @@ where
                     let mut item: Self::Item =
                         self.group.generators()[(self.cursor % self.generator_len)].clone();
 
+                    // TODO: precalculate inverses!
                     if self.cursor % (2 * self.generator_len) >= self.generator_len {
                         item = item.inverse();
                     }
