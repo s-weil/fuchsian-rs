@@ -131,20 +131,6 @@ where
 
 /// NOTE: `SpecialLinearMoebiusTransformation<T>` as wrapper of `MoebiusTransformation<T>` satisfying `SpecialLinear`
 /// will hence implement Group under relevant trait bounds, see `algebraic_extensions.rs`
-// impl<T> Wrapper<MoebiusTransformation<T>> for SpecialLinearMoebiusTransformation<T> where
-//     MoebiusTransformation<T>: SpecialLinear<T>
-// {
-// }
-
-// impl<T> Determinant<T> for SpecialLinearMoebiusTransformation<T>
-// where
-//     T: Numeric + std::marker::Copy,
-// {
-//     fn det(&self) -> T {
-//         self.deref().determinant()
-//     }
-// }
-
 impl<T> Wrapper for SpecialLinearMoebiusTransformation<T>
 where
     MoebiusTransformation<T>: SpecialLinear<T>,
@@ -176,116 +162,6 @@ where
     }
 }
 
-// impl<T> Group for SpecialLinearMoebiusTransformation<T>
-// where
-//     MoebiusTransformation<T>: Group,
-//     SpecialLinearMoebiusTransformation<T>: From<MoebiusTransformation<T>>
-//         + Deref<Target = MoebiusTransformation<T>>
-//         + PartialEq
-//         + Sized,
-// {
-//     fn combine(&self, other: &Self) -> Self {
-//         self.deref().combine(other.deref()).into()
-//     }
-
-//     fn identity() -> Self {
-//         MoebiusTransformation::identity().into()
-//     }
-
-//     fn inv(&self) -> Self {
-//         self.deref().inv().into()
-//     }
-// }
-
-// Multiplicative group implementation for MoebiusTransformation with the restriction of determinant == 1.
-// impl<T> Group for SpecialLinearMoebiusTransformation<T>
-// where
-//     T: Numeric + MulIdentity + Copy + PartialEq,
-// {
-//     fn combine(&self, other: &Self) -> Self {
-//         let m1 = self.m;
-//         let m2 = other.m;
-//         Self { m: m1 * m2 }
-//     }
-
-//     fn identity() -> Self {
-//         let one = MoebiusTransformation::one();
-//         Self { m: one }
-//     }
-
-//     fn inv(&self) -> Self {
-//         // No need to check the determinant, since it is assumed to be 1.
-//         // See `MoebiusTransformation.inverse()` for the formula.
-//         let inverse = MoebiusTransformation::<T> {
-//             a: self.m.d,
-//             b: -self.m.b,
-//             c: -self.m.c,
-//             d: self.m.a,
-//         };
-//         Self { m: inverse }
-//     }
-// }
-
-// impl<T> Group for SpecialLinearMoebiusTransformation<T>
-// where
-//     MoebiusTransformation<T>: Group + SpecialLinear<T>,
-//     // T: Numeric + MulIdentity + Copy + PartialEq, // Self: SpecialLinear<T> + MulIdentity + Mul<Output = MoebiusTransformation<T>> + Clone,
-//     // T: PartialEq + Clone + Neg<Output = T>,
-// {
-//     fn combine(&self, other: &Self) -> Self {
-//         self.deref().combine(other.deref()).into()
-//     }
-
-//     fn identity() -> Self {
-//         MoebiusTransformation::<T>::identity().into()
-//     }
-
-//     fn inverse(&self) -> Self {
-//         let m = self.deref();
-//         m.inverse().into()
-//     }
-// }
-
-// where
-//     Self: SpecialLinear<T> + MulIdentity + Mul<Output = MoebiusTransformation<T>> + Clone,
-//     T: PartialEq + Clone + Neg<Output = T>,
-
-// /// Helper:
-// /// We identify Moebius transformations satisfying the condition `determinant == 1` with the
-// /// subset [SL(2,R)](https://en.wikipedia.org/wiki/SL2(R)) within 2x2 matrices.
-// /// Due to mathematical limitations in rust we cannot model this condition, i.e. this subset, and hence
-// /// use the wrapper `ProjectedMoebiusTransformation<_>` which checks the condition upon construction and assumes the condition.
-// pub struct SpecialLinear<T> {
-//     /// Moebius transformation with determinat == 1
-//     m: MoebiusTransformation<T>,
-// }
-
-// impl<T> Deref for SpecialLinear<T> {
-//     type Target = MoebiusTransformation<T>;
-//     fn deref(&self) -> &Self::Target {
-//         &self.m
-//     }
-// }
-
-// impl<T> PartialEq for SpecialLinear<T>
-// where
-//     MoebiusTransformation<T>: PartialEq,
-// {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.m == other.m
-//     }
-// }
-
-// impl<T> Eq for SpecialLinear<T> where MoebiusTransformation<T>: PartialEq {}
-// impl<T> std::hash::Hash for SpecialLinear<T>
-// where
-//     MoebiusTransformation<T>: std::hash::Hash,
-// {
-//     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-//         self.m.hash(state);
-//     }
-// }
-
 impl<T> Clone for SpecialLinearMoebiusTransformation<T>
 where
     T: Clone,
@@ -297,68 +173,7 @@ where
 
 // // TODO: revisit the trait bounds below; use only what is actually required!
 // // TODO: realize ProjectiveSpecialLinear
-
-// impl<T> SpecialLinear<T> {
-//     fn rescale(&self, positive_determinant: T) -> Self
-//     where
-//         T: Numeric + Div<Output = T> + MulIdentity + SquareRoot + Copy,
-//     {
-//         let scalar = T::one() / positive_determinant.square_root();
-//         Self { m: self.m * scalar }
-//     }
-
-//     /// impl `TryFrom` but with a numeric threshold to check and option as result.
-//     pub fn try_from(m: MoebiusTransformation<T>, numeric_threshold: Option<f64>) -> Option<Self>
-//     where
-//         T: Numeric
-//             + NumericAddIdentity
-//             + Div<Output = T>
-//             + MulIdentity
-//             + SquareRoot
-//             + IsPositive
-//             + Copy,
-//     {
-//         if m.is_invertible(numeric_threshold) {
-//             let determinant = m.determinant();
-//             if determinant.is_positive() {
-//                 let s = Self { m };
-//                 return Some(s.rescale(determinant));
-//             }
-//         }
-//         None
-//     }
-// }
-
 // // TODO: impl TryFrom
-
-// // Multiplicative group implementation for MoebiusTransformation with the restriction of determinant == 1.
-// impl<T> Group for SpecialLinear<T>
-// where
-//     T: Numeric + MulIdentity + Copy + PartialEq,
-// {
-//     fn combine(&self, other: &Self) -> Self {
-//         let m1 = self.m;
-//         let m2 = other.m;
-//         Self { m: m1 * m2 }
-//     }
-
-//     fn identity() -> Self {
-//         let one = MoebiusTransformation::one();
-//         Self { m: one }
-//     }
-
-//     fn inverse(&self) -> Self {
-//         // No need to check the determinant, since it is assumed to be 1.
-//         // See `MoebiusTransformation.inverse()` for the formula.
-//         let inverse = MoebiusTransformation::<T> {
-//             a: self.m.d,
-//             b: -self.m.b,
-//             c: -self.m.c,
-//             d: self.m.a,
-//         };
-//         Self { m: inverse }
-//     }
-// }
 
 /// From [wikipedia](https://en.wikipedia.org/wiki/Fuchsian_group):
 /// In mathematics, a Fuchsian group is a discrete subgroup of PSL(2,R).
