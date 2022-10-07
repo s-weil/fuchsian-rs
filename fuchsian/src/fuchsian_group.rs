@@ -3,7 +3,7 @@ use crate::{
         Group, IsPositive, MulIdentity, Numeric, NumericAddIdentity, SquareRoot,
     },
     group_action::{Action, Determinant, FinitelyGeneratedGroup, SpecialLinear},
-    moebius::MoebiusTransformation,
+    moebius::{self, MoebiusTransformation},
     set_extensions::{SetRestriction, Wrapper},
 };
 use num_complex::Complex;
@@ -369,16 +369,19 @@ where
 /// sometimes it is allowed to be a Kleinian group (a discrete subgroup of PSL(2,C)) which is conjugate to a subgroup of PSL(2,R).
 ///
 /// NOTE: for simplicity we will in the following restrict to the case of <i>finitely generated</i> Fuchsian groups.
-pub struct FuchsianGroup<T> {
-    generators: Vec<SpecialLinearMoebiusTransformation<T>>,
+pub struct FuchsianGroup<T>
+where
+    MoebiusTransformation<T>: SpecialLinear<T>,
+{
+    generators: Vec<MoebiusTransformation<T>>,
     // inverse_generator: Vec<SpecialLinear<T>>,
 }
 
 impl<T> FinitelyGeneratedGroup for FuchsianGroup<T>
 where
-    SpecialLinearMoebiusTransformation<T>: Group,
+    MoebiusTransformation<T>: Group + SpecialLinear<T>,
 {
-    type GroupElement = SpecialLinearMoebiusTransformation<T>;
+    type GroupElement = MoebiusTransformation<T>;
 
     fn generators(&self) -> &[Self::GroupElement] {
         &self.generators
@@ -389,7 +392,18 @@ where
     // }
 }
 
-impl<T> FuchsianGroup<T> {
+impl<T> FuchsianGroup<T>
+where
+    MoebiusTransformation<T>: SpecialLinear<T>,
+{
+    // TODO: add this
+    // pub fn try_push(&mut self, moebius: MoebiusTransformation<T>) -> bool {
+    //     if m.condition() {
+    //         self.generators.as_mut().push(moebius)
+    //     }
+    //     false
+    // }
+
     /// Tries to create a `ProjectedMoebiusTransformation<T>` for each 'raw generator'
     /// of type `MoebiusTransformations<T>` satisfying `determinant == 1`.
     pub fn create_from_valid(raw_generators: Vec<MoebiusTransformation<T>>) -> Self
@@ -400,8 +414,9 @@ impl<T> FuchsianGroup<T> {
         let mut generators = Vec::new();
 
         for m in raw_generators.into_iter() {
+            // TODO; use SpecialLinear condition here!
             if m.determinant() == T::one() {
-                generators.push(SpecialLinearMoebiusTransformation { m });
+                generators.push(m);
             }
         }
 
@@ -432,8 +447,11 @@ impl<T> FuchsianGroup<T> {
         // TODO: filter out duplicates
         let generators = raw_generators
             .into_iter()
-            .flat_map(|m| SpecialLinearMoebiusTransformation::<T>::try_from(m, numeric_threshold))
-            .collect::<Vec<SpecialLinearMoebiusTransformation<T>>>();
+            .flat_map(|m| {
+                SpecialLinearMoebiusTransformation::<T>::try_from(m, numeric_threshold)
+                    .map(|slm| slm.m)
+            })
+            .collect::<Vec<MoebiusTransformation<T>>>();
         Self { generators }
     }
 }
@@ -445,6 +463,10 @@ where
     T: Numeric + Copy + PartialEq,
     Complex<T>: Div<Output = Complex<T>>,
 {
+    // fn map(&self, x: &Complex<T>) -> Complex<T> {
+    //         (self.deref() as &MoebiusTransformation<T>).map(x)
+    //     }
+
     fn map(&self, x: &Complex<T>) -> Complex<T> {
         let nom = Complex::<T> {
             re: self.a * x.re + self.b,
@@ -459,17 +481,6 @@ where
     }
 }
 
-// /// Implement Action for float types on the complex plane.
-// impl<T> Action<Complex<T>> for SpecialLinear<T>
-// where
-//     T: Numeric + Copy + PartialEq,
-//     Complex<T>: Div<Output = Complex<T>>,
-// {
-//     fn map(&self, x: &Complex<T>) -> Complex<T> {
-//         (self.deref() as &MoebiusTransformation<T>).map(x)
-//     }
-// }
-
 impl<T> Action<Complex<T>> for MoebiusTransformation<Complex<T>>
 where
     Complex<T>:
@@ -481,18 +492,11 @@ where
         // TODO: check for 0?
         nom / denom
     }
-}
 
-// /// Implement Action for float types on the complex plane.
-// impl<T> Action<Complex<T>> for SpecialLinear<Complex<T>>
-// where
-//     Complex<T>:
-//         Add<Output = Complex<T>> + Mul<Output = Complex<T>> + Div<Output = Complex<T>> + Clone,
-// {
-//     fn map(&self, x: &Complex<T>) -> Complex<T> {
-//         (self.deref() as &MoebiusTransformation<Complex<T>>).map(x)
-//     }
-// }
+    //     fn map(&self, x: &Complex<T>) -> Complex<T> {
+    //         (self.deref() as &MoebiusTransformation<Complex<T>>).map(x)
+    //     }
+}
 
 #[cfg(test)]
 mod tests {
