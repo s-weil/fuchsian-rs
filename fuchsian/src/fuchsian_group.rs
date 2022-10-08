@@ -3,7 +3,7 @@ use crate::{
         Group, IsPositive, MulIdentity, Numeric, NumericAddIdentity, SquareRoot,
     },
     group_action::{Action, FinitelyGeneratedGroup, SpecialLinear},
-    moebius::{MoebiusTransformation},
+    moebius::MoebiusTransformation,
     set_extensions::{SetRestriction, Wrapper},
 };
 use num_complex::Complex;
@@ -26,46 +26,14 @@ where
     fn inv(&self) -> Self {
         // No need to check the determinant, since it is assumed to be 1.
         // See `MoebiusTransformation.inverse()` for the formula.
-        let inverse = MoebiusTransformation::<T> {
+        MoebiusTransformation::<T> {
             a: self.d.clone(),
             b: -self.b.clone(),
             c: -self.c.clone(),
             d: self.a.clone(),
-        };
-        inverse
+        }
     }
 }
-
-// Multiplicative group implementation for MoebiusTransformation satisfying determinant == 1.
-// impl<M, T> Group for M
-// where
-//     M: Deref<Target = MoebiusTransformation<T>>,
-//     MoebiusTransformation<T>:
-//         SpecialLinear<T> + MulIdentity + Mul<Output = MoebiusTransformation<T>> + Clone,
-//     T: PartialEq + Clone + Neg<Output = T>,
-// {
-//     type GroupElement = MoebiusTransformation<T>;
-
-//     fn combine(&self, other: &Self) -> MoebiusTransformation<T> {
-//         self.deref().clone() * other.deref().clone()
-//     }
-
-//     fn identity() -> Self {
-//         Self::one()
-//     }
-
-//     fn inverse(&self) -> Self {
-//         // No need to check the determinant, since it is assumed to be 1.
-//         // See `MoebiusTransformation.inverse()` for the formula.
-//         let inverse = MoebiusTransformation::<T> {
-//             a: self.d.clone(),
-//             b: -self.b.clone(),
-//             c: -self.c.clone(),
-//             d: self.a.clone(),
-//         };
-//         inverse
-//     }
-// }
 
 /// Helper:
 /// We identify Moebius transformations satisfying the condition `determinant == 1` with the
@@ -171,10 +139,6 @@ where
     }
 }
 
-// // TODO: revisit the trait bounds below; use only what is actually required!
-// // TODO: realize ProjectiveSpecialLinear
-// // TODO: impl TryFrom
-
 /// From [wikipedia](https://en.wikipedia.org/wiki/Fuchsian_group):
 /// In mathematics, a Fuchsian group is a discrete subgroup of PSL(2,R).
 /// The group PSL(2,R) can be regarded equivalently as a group of isometries of the hyperbolic plane, or conformal transformations of the unit disc, or conformal transformations of the upper half plane, so a Fuchsian group can be regarded as a group acting on any of these spaces.
@@ -189,6 +153,7 @@ where
     MoebiusTransformation<T>: SpecialLinear<T>,
 {
     generators: Vec<MoebiusTransformation<T>>,
+    // TODO: maybe add...
     // inverse_generator: Vec<SpecialLinear<T>>,
 }
 
@@ -201,10 +166,6 @@ where
     fn generators(&self) -> &[Self::GroupElement] {
         &self.generators
     }
-
-    // fn inverse_generators(&self) -> &[Self::GroupElement] {
-    //     &self.inverse_generator
-    // }
 }
 
 impl<T> FuchsianGroup<T>
@@ -265,17 +226,12 @@ where
     }
 }
 
-// TODO: bmk test with below implementation vs directly applied one
 /// Implement Action for float types on the complex plane.
 impl<T> Action<Complex<T>> for MoebiusTransformation<T>
 where
     T: Numeric + Copy + PartialEq,
     Complex<T>: Div<Output = Complex<T>>,
 {
-    // fn map(&self, x: &Complex<T>) -> Complex<T> {
-    //         (self.deref() as &MoebiusTransformation<T>).map(x)
-    //     }
-
     fn map(&self, x: &Complex<T>) -> Complex<T> {
         let nom = Complex::<T> {
             re: self.a * x.re + self.b,
@@ -301,10 +257,6 @@ where
         // TODO: check for 0?
         nom / denom
     }
-
-    //     fn map(&self, x: &Complex<T>) -> Complex<T> {
-    //         (self.deref() as &MoebiusTransformation<Complex<T>>).map(x)
-    //     }
 }
 
 #[cfg(test)]
@@ -352,23 +304,6 @@ mod tests {
         assert_abs_diff_eq!(pm5.unwrap().determinant(), 1.0, epsilon = f32::EPSILON);
     }
 
-    // #[test]
-    // fn test_projective() {
-    //     let one = MoebiusTransformation::<f32>::new(1.0, 0.0, 0.0, 1.0);
-    //     let minus_one = MoebiusTransformation::<f32>::new(-1.0, 0.0, 0.0, -1.0);
-
-    //     let one = SpecialLinearMoebiusTransformation::try_from(one, None);
-    //     let minus_one = SpecialLinearMoebiusTransformation::try_from(minus_one, None);
-
-    //     assert!(one.is_some());
-    //     assert!(minus_one.is_some());
-
-    //     // assert_eq!(one.unwrap().a.clone(), minus_one.unwrap().a.clone());
-    //     assert_eq!(one.unwrap().a.clone(), minus_one.unwrap().a.clone());
-    //     // assert_eq!(one.unwrap().a, &minus_one.unwrap().a);
-    //     // assert_eq!(one.unwrap().a, &minus_one.unwrap().a);
-    // }
-
     #[test]
     fn test_fuchsian_group() {
         let m1 = MoebiusTransformation::<f64>::new(1.0, 2.0, 3.0, 4.0);
@@ -385,6 +320,23 @@ mod tests {
 
         let y = m.map(&c);
         assert_eq!(y.re, 3.0 / 7.0);
+        assert_eq!(y.im, 0.0);
+    }
+
+    #[test]
+    fn test_action_integers() {
+        let m = MoebiusTransformation::<i32>::new(0, -1, 1, 0);
+        let c = Complex::new(2, 0);
+
+        let y = m.map(&c);
+        assert_eq!(y.re, 0);
+        assert_eq!(y.im, 0);
+
+        let m = MoebiusTransformation::<f32>::new(0.0, -1.0, 1.0, 0.0);
+        let c = Complex::new(2.0, 0.0);
+
+        let y = m.map(&c);
+        assert_eq!(y.re, -0.5);
         assert_eq!(y.im, 0.0);
     }
 
@@ -466,6 +418,43 @@ mod tests {
         }
     }
 
-    // TODO: further tests on action and group operations; test for preserving upper half plane for psl2
-    // assert!(y.im >= 0.0);
+    #[test]
+    fn test_orbit_modular_group() {
+        // see https://en.wikipedia.org/wiki/Modular_group
+        // the modular group is generated by the transformations z -> z+1 and z -> -1/z,
+        // corresponding to the Moebius transformations g = [ 1, 1; 0, 1 ] and h = [ 0, -1; 1, 0 ]
+
+        let g = MoebiusTransformation::<i32>::new(1, 1, 0, 1);
+        let h = MoebiusTransformation::<i32>::new(0, -1, 1, 0);
+
+        let fuchsian_group = FuchsianGroup::create_from_valid(vec![g, h]);
+
+        assert_eq!(fuchsian_group.generators.len(), 2);
+
+        let base_point = Complex::<i32>::new(1, 0);
+        let orbit = Orbit::create(&fuchsian_group, &base_point, 100, None);
+
+        assert_eq!(orbit.points.len(), 100);
+
+        for p in orbit.points {
+            assert_eq!(p.im, 0);
+        }
+
+        let g = MoebiusTransformation::<f32>::new(1.0, 1.0, 0.0, 1.0);
+        let h = MoebiusTransformation::<f32>::new(0.0, -1.0, 1.0, 0.0);
+
+        let fuchsian_group = FuchsianGroup::create_from_valid(vec![g, h]);
+
+        assert_eq!(fuchsian_group.generators.len(), 2);
+
+        let base_point = Complex::<f32>::new(1.0, 0.0);
+        let orbit = Orbit::create(&fuchsian_group, &base_point, 100, None);
+
+        assert_eq!(orbit.points.len(), 100);
+
+        for p in orbit.points {
+            assert_eq!(p.im, 0.0);
+            assert_ne!(p.re, 0.0);
+        }
+    }
 }

@@ -34,79 +34,6 @@ pub trait SpecialLinear<T>: Determinant<T> + SetRestriction {
     // TODO: check if overwrite actually works
 }
 
-// impl<M, S, T> SpecialLinear<T> for M
-// where
-//     M: Wrapper<Inner = S>,
-//     S: SpecialLinear<T>,
-// {
-//     fn condition(&self) -> bool {
-//         let d: &S = self.deref();
-//         SpecialLinear::condition(d)
-//         // d.condition()
-//     }
-// }
-
-// pub trait SpecialLinear<T>: Determinant<T> + SetRestriction {
-//     fn restriction(&self) -> bool
-//     where
-//         T: PartialEq,
-//         Self: MulIdentity,
-//     {
-//         let one: Self = MulIdentity::one();
-//         &self.determinant() == one.determinant()
-//     }
-// }
-
-// impl<M, T> SetRestriction for M
-// where
-//     M: SpecialLinear<T>,
-// {
-//     fn restriction(s: &Self) -> bool {
-//         s.is_special_linear()
-//     }
-// }
-
-// use crate::algebraic_extensions::AddIdentity;
-// // The [mathematical group](https://en.wikipedia.org/wiki/Group_(mathematics)#Definition)
-// // definition except for the associativity identity.
-// // /// In particular, `MoebiusTransformation<T>` is an additive group
-// /// ```
-// /// use std::ops::{Add, Neg};
-// /// impl<T> Group for T
-// /// where
-// ///     T: AddIdentityElement + Add<Output = Self> + Neg<Output = Self> + Copy + PartialEq + Sized,
-// /// {
-// ///     fn combine(&self, other: &Self) -> Self {
-// ///         *self + *other
-// ///     }
-// ///
-// ///     fn identity() -> Self {
-// ///         Self::zero()
-// ///     }
-// ///
-// ///     fn inverse(&self) -> Self {
-// ///         -*self
-// ///     }
-// /// }
-// /// ```
-// pub trait Group: PartialEq + Sized {
-//     /// The binary operation.
-//     fn combine(&self, other: &Self) -> Self;
-
-//     /// The identity element.
-//     fn identity() -> Self;
-
-//     /// The inverse element.
-//     fn inverse(&self) -> Self;
-
-//     // how to model identities in general?
-//     fn associativity_check(&self, b: &Self, c: &Self) -> bool {
-//         let ab_c = self.combine(b).combine(c);
-//         let a_bc = self.combine(&b.combine(c));
-//         ab_c == a_bc
-//     }
-// }
-
 /// A [finitely generated group](https://en.wikipedia.org/wiki/Finitely_generated_group) `G` has
 /// some finite generating set so that every `g \in G`can be written as a finite combination
 /// of these elements (and their inveserses).
@@ -261,8 +188,3 @@ where
         }
     }
 }
-
-// TODO:
-// - revisit trait definitions and required bounds
-// - Fundamental Domain
-// - check performance of group action / orbit. i.e. what is faster, combining group elements and then action, or iterative actions
