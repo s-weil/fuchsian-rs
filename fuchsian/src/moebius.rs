@@ -298,7 +298,11 @@ impl<T> SpecialLinear<T> for MoebiusTransformation<T> where
 #[cfg(test)]
 mod tests {
     use super::MoebiusTransformation;
-    use crate::algebraic_extensions::{AddIdentity, MulIdentity, NumericMulIdentity};
+    use crate::{
+        algebraic_extensions::{AddIdentity, MulIdentity, NumericMulIdentity},
+        group_action::SpecialLinear,
+        set_extensions::SetRestriction,
+    };
 
     #[test]
     fn test_macro() {
@@ -437,5 +441,20 @@ mod tests {
         let numerical_one = m * m.inverse(None).unwrap();
         assert!(numerical_one.is_one(Some(1e-7)));
         assert!(!numerical_one.is_one(Some(1e-8)));
+    }
+
+    #[test]
+    fn test_special_linear() {
+        let m1 = MoebiusTransformation::<i8>::new(1, 4, 0, -1);
+        let slm1 = MoebiusTransformation::try_new(m1);
+        assert!(slm1.is_none());
+
+        let m2 = MoebiusTransformation::<i8>::new(1, 1, 0, 1);
+        let slm2 = MoebiusTransformation::try_new(m2);
+        assert!(slm2.is_some());
+
+        let m3 = MoebiusTransformation::<i8>::new(0, -1, 1, 0);
+        let slm3 = MoebiusTransformation::try_new(m3);
+        assert!(slm3.is_some());
     }
 }
