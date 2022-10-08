@@ -268,7 +268,7 @@ where
 
 // ########################
 // Establish SpecialLinear trait for MoebiusTransformation.
-// This has no effect, only for creating them.
+// This has no effect, only provides meanns for creating them.
 // ########################
 
 impl<T> Determinant<T> for MoebiusTransformation<T>

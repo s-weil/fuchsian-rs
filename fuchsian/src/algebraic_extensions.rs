@@ -8,6 +8,7 @@ pub trait Numeric:
 {
 }
 // TODO: rename to make sure numeric is not meant to be math numeric
+/// Will hold for i8, i16, i32, i64, f32, f64
 impl<T> Numeric for T where
     T: Sized + AddIdentity + Add<Output = T> + Mul<Output = T> + Neg<Output = T>
 {
@@ -54,6 +55,7 @@ pub trait IsPositive {
     fn is_positive(&self) -> bool;
 }
 
+/// Will hold for f32, f64
 pub trait MuliplicativeNumeric:
     Sized + MulIdentity + Mul<Output = Self> + Div<Output = Self>
 {
@@ -250,18 +252,6 @@ impl_numeric_mul_identity! { i64 }
 impl_numeric_mul_identity! { f32 }
 impl_numeric_mul_identity! { f64 }
 
-// // implement Numeric
-// impl Numeric for i8 {}
-// impl Numeric for i16 {}
-// impl Numeric for i32 {}
-// impl Numeric for i64 {}
-// impl Numeric for f32 {}
-// impl Numeric for f64 {}
-
-// implement MuliplicativeNumeric
-impl MuliplicativeNumeric for f32 {}
-impl MuliplicativeNumeric for f64 {}
-
 // implement SignedSquareRoot
 impl_square_root! { f32 }
 impl_square_root! { f64 }
@@ -277,6 +267,3 @@ impl_is_positive! { i32 }
 impl_is_positive! { i64 }
 impl_is_positive! { f32 }
 impl_is_positive! { f64 }
-
-// TODO: add bigdecimal support
-// TODO: add 'complex number' support

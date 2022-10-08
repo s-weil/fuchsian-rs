@@ -18,11 +18,9 @@ pub trait SetRestriction: Sized {
     }
 }
 
-// TODO: könnten oben evtl direkt den wrapper benutzen ?
-
-/// Wrapper holding an inner type S.
-/// NOTE: Although the Deref<S> is sufficient for many auto trait implementations,
-///       we will always require full Wrapper to make sure it can be converted both ways.
+/// Wrapper holding an inner type `Inner`.
+/// NOTE: Although the `Deref<Target = Inner>` is sufficient for many auto trait implementations,
+///       we will always require full `Wrapper` to make sure it can be converted both ways.
 pub trait Wrapper: From<Self::Inner> + Deref<Target = Self::Inner> {
     type Inner;
 }
@@ -36,13 +34,3 @@ where
         self.deref().condition()
     }
 }
-
-// impl<M, S> PartialEq for M
-// where
-//     M: Wrapper<Inner = S>,
-//     S: PartialEq,
-// {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.m == other.m
-//     }
-// }
