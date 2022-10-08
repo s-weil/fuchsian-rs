@@ -1,5 +1,9 @@
-use crate::algebraic_extensions::{
-    AddIdentity, MulIdentity, Numeric, NumericAddIdentity, NumericMulIdentity,
+use crate::{
+    algebraic_extensions::{
+        AddIdentity, Inverse, MulIdentity, Numeric, NumericAddIdentity, NumericMulIdentity,
+    },
+    group_action::{Determinant, SpecialLinear},
+    set_extensions::SetRestriction,
 };
 use std::{
     fmt,
@@ -9,17 +13,22 @@ use std::{
 // TODO: consider https://docs.rs/katex-doc/latest/katex_doc/ or
 //  https://crates.io/crates/rust-latex-doc-minimal-example for math formulas
 
-/// https://en.wikipedia.org/wiki/M%C3%B6bius_transformation
-/// Corresponds to the matrix-vector multiplication of the matrix
-/// $[a, b; c, d] * [x; y]$
-/// for $[x; y]$ in the (real) Euclidean vector space.
-/// Corresponds to the complex-valued function
-/// $z complex -> f(z) = \frac{a*z + b}{cz + d}$
+/// A [Moebius transformation](https://en.wikipedia.org/wiki/M%C3%B6bius_transformation) can be identified
+/// to a 2x2 matrix `$ [a, b; c, d] $` acting on the complex plane $C$ via the function
+/// `$ C \ni z -> f(z) = \frac{a*z + b}{cz + d} $`
+/// where the determinant of the matrix  `ad - bc != 0`.
 pub struct MoebiusTransformation<T> {
-    a: T,
-    b: T,
-    c: T,
-    d: T,
+    pub a: T,
+    pub b: T,
+    pub c: T,
+    pub d: T,
+}
+
+#[macro_export]
+macro_rules! moebius {
+    ($impl_type:ty, $a:expr, $b:expr, $c:expr, $d:expr) => {
+        MoebiusTransformation::<$impl_type>::new($a, $b, $c, $d)
+    };
 }
 
 impl<T> MoebiusTransformation<T> {
@@ -105,8 +114,20 @@ where
 }
 impl<T> Eq for MoebiusTransformation<T> where T: PartialEq {}
 
+impl<T> std::hash::Hash for MoebiusTransformation<T>
+where
+    T: std::hash::Hash,
+{
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.a.hash(state);
+        self.b.hash(state);
+        self.c.hash(state);
+        self.d.hash(state);
+    }
+}
+
 // ########################
-// Establish algebraic structure for Moebius-transformations
+// Establish algebraic structures on the set of Moebius-transformations (group, ring, vector space)
 // ########################
 
 impl<T> AddIdentity for MoebiusTransformation<T>
@@ -211,12 +232,6 @@ where
     }
 }
 
-// ########################
-// Establish vector space structure for Moebius-transformations
-// ########################
-
-// addition see above
-
 // Scalability, corresponds to scalar * matrix
 impl<T> Mul<T> for MoebiusTransformation<T>
 where
@@ -234,36 +249,98 @@ where
     }
 }
 
+// TODO: move
+pub const DEFAULT_THRESHOLD: f64 = 1e-16;
+
+impl<T> Inverse for MoebiusTransformation<T>
+where
+    T: Numeric + NumericAddIdentity + std::marker::Copy + Div<Output = T>,
+{
+    type Error = &'static str;
+
+    fn inverse(&self) -> std::result::Result<Self, Self::Error> {
+        if let Some(m) = self.inverse(Some(DEFAULT_THRESHOLD)) {
+            return Ok(m);
+        }
+        Err("Moebius transformation is not invertible. Determinant smaller than 1e-16")
+    }
+}
+
+// ########################
+// Establish SpecialLinear trait for MoebiusTransformation.
+// This has no effect, only provides meanns for creating them.
+// ########################
+
+impl<T> Determinant<T> for MoebiusTransformation<T>
+where
+    T: Numeric + std::marker::Copy,
+{
+    fn det(&self) -> T {
+        self.determinant()
+    }
+}
+
+impl<T> SetRestriction for MoebiusTransformation<T>
+where
+    T: MulIdentity + PartialEq,
+    MoebiusTransformation<T>: Determinant<T>,
+{
+    fn condition(&self) -> bool {
+        self.det() == T::one()
+    }
+}
+
+impl<T> SpecialLinear<T> for MoebiusTransformation<T> where
+    T: Numeric + MulIdentity + Copy + PartialEq
+{
+}
+
 #[cfg(test)]
 mod tests {
     use super::MoebiusTransformation;
-    use crate::algebraic_extensions::{AddIdentity, MulIdentity, NumericMulIdentity};
+    use crate::{
+        algebraic_extensions::{AddIdentity, MulIdentity, NumericMulIdentity},
+        group_action::SpecialLinear,
+        set_extensions::SetRestriction,
+    };
+
+    #[test]
+    fn test_macro() {
+        let m = moebius!(i8, 1, 2, 3, 4);
+        assert_eq!(m.a, 1);
+        assert_eq!(m.d, 4);
+
+        let m = moebius!(i64, 1, 2, 3, 4);
+        assert_eq!(m.a, 1);
+        assert_eq!(m.d, 4);
+
+        let m = moebius!(f32, 1.0, 2.0, 3.0, 4.0);
+        assert_eq!(m.a, 1.0);
+        assert_eq!(m.d, 4.0);
+    }
 
     #[test]
     fn test_is_invertible() {
-        let m1 = MoebiusTransformation::<f32>::new(1.0, 2.0, 3.0, 4.0);
+        let m1 = moebius!(f32, 1.0, 2.0, 3.0, 4.0);
         assert_eq!(m1.determinant(), -2.0);
         assert!(m1.is_invertible(None));
 
-        let m2 = MoebiusTransformation::<f64>::new(1.0, 2.0, 2.0, 4.0);
+        let m2 = moebius!(f64, 1.0, 2.0, 2.0, 4.0);
         assert_eq!(m2.determinant(), 0.0);
         assert!(!m2.is_invertible(None));
 
-        let m3 = MoebiusTransformation::<f64>::new(1.0, 4.0, 0.0, 1.0);
+        let m3 = moebius!(f64, 1.0, 4.0, 0.0, 1.0);
         assert_eq!(m3.determinant(), 1.0);
         assert!(m3.is_invertible(None));
 
-        let m4 = MoebiusTransformation::<i8>::new(1, 4, 0, -1);
+        let m4 = moebius!(i8, 1, 4, 0, -1);
         assert_eq!(m4.determinant(), -1);
         assert!(m4.is_invertible(None));
     }
 
     #[test]
     fn test_squared_sum() {
-        assert_eq!(
-            MoebiusTransformation::<i32>::new(0, 0, 0, 0).squared_sum(),
-            0
-        );
+        assert_eq!(moebius!(i32, 0, 0, 0, 0).squared_sum(), 0);
 
         assert_eq!(MoebiusTransformation::<i32>::zero().squared_sum(), 0);
 
@@ -272,13 +349,13 @@ mod tests {
             2.0
         );
 
-        let m1 = MoebiusTransformation::<f32>::new(1.0, 2.2, 3.0, 4.0);
+        let m1 = moebius!(f32, 1.0, 2.2, 3.0, 4.0);
         assert_eq!((m1 - m1).squared_sum(), 0.0);
     }
 
     #[test]
-    fn test_group_structure() {
-        let m = MoebiusTransformation::<f32>::new(1.0, 2.2, 3.0, 4.0);
+    fn test_algebraic_structure() {
+        let m = moebius!(f32, 1.0, 2.2, 3.0, 4.0);
         let zero = MoebiusTransformation::<f32>::zero();
         let one = MoebiusTransformation::<f32>::one();
         assert!((m - m).eq(&zero));
@@ -297,8 +374,8 @@ mod tests {
                 == MoebiusTransformation::<i8>::one()
         );
 
-        let m1 = MoebiusTransformation::<f64>::new(-1.0, 2.0, -3.0, 4.0);
-        let m2 = MoebiusTransformation::<f64>::new(-5.0, 7.0, 1.0, 5.0);
+        let m1 = moebius!(f64, -1.0, 2.0, -3.0, 4.0);
+        let m2 = moebius!(f64, -5.0, 7.0, 1.0, 5.0);
 
         assert!(m1 + m2 == MoebiusTransformation::<f64>::new(-6.0, 9.0, -2.0, 9.0));
         assert!(m1 - m2 == MoebiusTransformation::<f64>::new(4.0, -5.0, -4.0, -1.0));
@@ -364,5 +441,20 @@ mod tests {
         let numerical_one = m * m.inverse(None).unwrap();
         assert!(numerical_one.is_one(Some(1e-7)));
         assert!(!numerical_one.is_one(Some(1e-8)));
+    }
+
+    #[test]
+    fn test_special_linear() {
+        let m1 = MoebiusTransformation::<i8>::new(1, 4, 0, -1);
+        let slm1 = MoebiusTransformation::try_new(m1);
+        assert!(slm1.is_none());
+
+        let m2 = MoebiusTransformation::<i8>::new(1, 1, 0, 1);
+        let slm2 = MoebiusTransformation::try_new(m2);
+        assert!(slm2.is_some());
+
+        let m3 = MoebiusTransformation::<i8>::new(0, -1, 1, 0);
+        let slm3 = MoebiusTransformation::try_new(m3);
+        assert!(slm3.is_some());
     }
 }
