@@ -51,6 +51,17 @@ where
         }
     }
 }
+impl<T> Clone for BoundaryPoint<T>
+where
+    T: Clone,
+{
+    fn clone(&self) -> BoundaryPoint<T> {
+        match self {
+            BoundaryPoint::Infinity => BoundaryPoint::Infinity,
+            BoundaryPoint::Regular(t) => BoundaryPoint::Regular(t.clone()),
+        }
+    }
+}
 
 /// Implement Action for Moebius transformations on the boundary.
 impl<T> Action<BoundaryPoint<T>> for MoebiusTransformation<T>

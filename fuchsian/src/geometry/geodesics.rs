@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use super::boundary::BoundaryPoint;
 use crate::{
     group_action::{Action, SpecialLinear},
@@ -21,6 +23,13 @@ where
             return Some(Self { start, end });
         }
         None
+    }
+
+    pub fn end_points(&self) -> (BoundaryPoint<T>, BoundaryPoint<T>)
+    where
+        T: Clone,
+    {
+        (self.start.clone(), self.end.clone())
     }
 }
 
