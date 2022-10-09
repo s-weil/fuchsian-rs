@@ -1,6 +1,6 @@
 use crate::{
     algebraic_extensions::{Numeric, NumericAddIdentity},
-    group_action::Action,
+    group_action::{Action, SpecialLinear},
     moebius::MoebiusTransformation,
     NUMERIC_THRESHOLD,
 };
@@ -9,6 +9,8 @@ use std::{
     ops::Div,
 };
 
+/// Boundary points of the upper half plane (within C).
+/// SpecialLinear preserves the boundary (maps a boundary points to the boundary).
 pub enum BoundaryPoint<T> {
     Infinity,
     Regular(T),
@@ -56,7 +58,8 @@ where
 /// Implement Action for Moebius transformations on the boundary.
 impl<T> Action<BoundaryPoint<T>> for MoebiusTransformation<T>
 where
-    T: Numeric + Div<Output = T> + NumericAddIdentity + Copy + PartialEq,
+    T: Numeric + Div<Output = T> + NumericAddIdentity + Copy,
+    MoebiusTransformation<T>: SpecialLinear<T>,
 {
     fn map(&self, x: &BoundaryPoint<T>) -> BoundaryPoint<T> {
         match x {
@@ -111,7 +114,6 @@ mod tests {
         // no fixed point
         let boundary_regular = BoundaryPoint::Regular(1.0);
         assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(25.0));
-
         let boundary_regular = BoundaryPoint::Regular(-1.0);
         assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(-25.0));
     }
@@ -120,7 +122,6 @@ mod tests {
     #[test]
     fn test_action_rotation() {
         // no fixed points
-        // rotation by pi = 180deg [cosh(.), -sinh(.); sinh(.), cosh(.)]
         // rotation by pi/2 = 90 [cos(.), -sin(.); sin(.), cos(.)]
         let h = MoebiusTransformation::<f64>::new(0.0, -1.0, 1.0, 0.0);
 
