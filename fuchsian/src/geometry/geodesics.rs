@@ -14,11 +14,36 @@ pub struct GeodesicBoundary<T> {
     end: BoundaryPoint<T>,
 }
 
+impl<T> GeodesicBoundary<T>
+where
+    T: PartialEq,
+{
+    pub fn new(start: BoundaryPoint<T>, end: BoundaryPoint<T>) -> Option<Self> {
+        if start != end {
+            return Some(Self { start, end });
+        }
+        None
+    }
+}
+
+// /// Implement `Action` for Moebius transformations on Geodesics.
+// impl<T> Action<GeodesicBoundary<T>> for MoebiusTransformation<T>
+// where
+//     T: Numeric + Div<Output = T> + NumericAddIdentity + Copy,
+//     MoebiusTransformation<T>: SpecialLinear<T>,
+// {
+//     fn map(&self, x: &GeodesicBoundary<T>) -> GeodesicBoundary<T> {
+//         GeodesicBoundary {
+//             start: self.map(&x.start),
+//             end: self.map(&x.end),
+//         }
+//     }
+// }
+
 /// Implement `Action` for Moebius transformations on Geodesics.
 impl<T> Action<GeodesicBoundary<T>> for MoebiusTransformation<T>
 where
-    T: Numeric + Div<Output = T> + NumericAddIdentity + Copy,
-    MoebiusTransformation<T>: SpecialLinear<T>,
+    MoebiusTransformation<T>: SpecialLinear<T> + Action<BoundaryPoint<T>>,
 {
     fn map(&self, x: &GeodesicBoundary<T>) -> GeodesicBoundary<T> {
         GeodesicBoundary {
