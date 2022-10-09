@@ -1,9 +1,12 @@
-use std::ops::Div;
-
 use crate::{
     algebraic_extensions::{Numeric, NumericAddIdentity},
     group_action::Action,
     moebius::MoebiusTransformation,
+    NUMERIC_THRESHOLD,
+};
+use std::{
+    fmt::{self, Debug, Display},
+    ops::Div,
 };
 
 pub enum BoundaryPoint<T> {
@@ -11,9 +14,44 @@ pub enum BoundaryPoint<T> {
     Regular(T),
 }
 
-// TODO: action of moebius
-
-const NUMERIC_THRESHOLD: f64 = 1e-16;
+impl<T> PartialEq for BoundaryPoint<T>
+where
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (BoundaryPoint::Infinity, BoundaryPoint::Infinity) => true,
+            (BoundaryPoint::Regular(t1), BoundaryPoint::Regular(t2)) => t1 == t2,
+            _ => false,
+        }
+    }
+}
+impl<T> Eq for BoundaryPoint<T> where T: PartialEq {}
+impl<T> Display for BoundaryPoint<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BoundaryPoint::Infinity => write!(f, "∞"),
+            BoundaryPoint::Regular(t) => write!(f, "{}", t),
+        }
+    }
+}
+// impl<T> Debug for BoundaryPoint<T>
+// where
+//     T: Debug,
+// {
+//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//         match self {
+//             BoundaryPoint::Infinity => f
+//                 .debug_struct("boundary")
+//                 .field("δ", "∞")
+//                 .finish(),
+//             BoundaryPoint::Regular(t) => f.debug_struct("boundary").field("δ", *t).finish(),
+//         }
+//     }
+// }
 
 /// Implement Action for Moebius transformations on the boundary.
 impl<T> Action<BoundaryPoint<T>> for MoebiusTransformation<T>
@@ -23,6 +61,7 @@ where
     fn map(&self, x: &BoundaryPoint<T>) -> BoundaryPoint<T> {
         match x {
             BoundaryPoint::Infinity => {
+                // Note: a and c cannot be 0 at the same time
                 if self.c.is_zero(Some(NUMERIC_THRESHOLD)) {
                     BoundaryPoint::Infinity
                 } else {
@@ -38,5 +77,63 @@ where
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BoundaryPoint;
+    use crate::{group_action::Action, moebius::MoebiusTransformation};
+
+    #[test]
+    fn test_action_horocyclic() {
+        let h = MoebiusTransformation::<f64>::new(1.0, 10.0, 0.0, 1.0);
+
+        let boundary_infty: BoundaryPoint<f64> = BoundaryPoint::Infinity;
+        let boundary_regular = BoundaryPoint::Regular(0.0);
+
+        assert!(h.map(&boundary_infty) == BoundaryPoint::Infinity);
+        assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(10.0));
+    }
+
+    #[test]
+    fn test_action_hyperbolic() {
+        let h = MoebiusTransformation::<f64>::new(5.0, 0.0, 0.0, 0.2);
+
+        // fixed point 1
+        let boundary_infty: BoundaryPoint<f64> = BoundaryPoint::Infinity;
+        assert!(h.map(&boundary_infty) == BoundaryPoint::Infinity);
+
+        // fixed point 2
+        let boundary_regular = BoundaryPoint::Regular(0.0);
+        assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(0.0));
+
+        // no fixed point
+        let boundary_regular = BoundaryPoint::Regular(1.0);
+        assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(25.0));
+
+        let boundary_regular = BoundaryPoint::Regular(-1.0);
+        assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(-25.0));
+    }
+
+    // TODO: incorrect
+    #[test]
+    fn test_action_rotation() {
+        // no fixed points
+        // rotation by pi = 180deg [cosh(.), -sinh(.); sinh(.), cosh(.)]
+        // rotation by pi/2 = 90 [cos(.), -sin(.); sin(.), cos(.)]
+        let h = MoebiusTransformation::<f64>::new(0.0, -1.0, 1.0, 0.0);
+
+        let b = BoundaryPoint::Regular(0.0);
+        assert!(h.map(&b) == BoundaryPoint::Infinity);
+
+        let b = BoundaryPoint::Infinity;
+        assert!(h.map(&b) == BoundaryPoint::Regular(0.0));
+
+        let b = BoundaryPoint::Regular(1.0);
+        assert!(h.map(&b) == BoundaryPoint::Regular(-1.0));
+
+        let b = BoundaryPoint::Regular(-1.0);
+        assert!(h.map(&b) == BoundaryPoint::Regular(1.0));
     }
 }
