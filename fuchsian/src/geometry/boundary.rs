@@ -9,7 +9,7 @@ use std::{
     ops::Div,
 };
 
-/// Boundary points of the upper half plane (within C).
+/// Boundary points of the hyperbolic (Poincare) upper half plane (within C).
 /// SpecialLinear preserves the boundary (maps a boundary points to the boundary).
 pub enum BoundaryPoint<T> {
     Infinity,
@@ -40,20 +40,17 @@ where
         }
     }
 }
-// impl<T> Debug for BoundaryPoint<T>
-// where
-//     T: Debug,
-// {
-//     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-//         match self {
-//             BoundaryPoint::Infinity => f
-//                 .debug_struct("boundary")
-//                 .field("δ", "∞")
-//                 .finish(),
-//             BoundaryPoint::Regular(t) => f.debug_struct("boundary").field("δ", *t).finish(),
-//         }
-//     }
-// }
+impl<T> Debug for BoundaryPoint<T>
+where
+    T: Display,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            BoundaryPoint::Infinity => write!(f, "∞"),
+            BoundaryPoint::Regular(t) => write!(f, "δ({})", t),
+        }
+    }
+}
 
 /// Implement Action for Moebius transformations on the boundary.
 impl<T> Action<BoundaryPoint<T>> for MoebiusTransformation<T>
@@ -95,8 +92,8 @@ mod tests {
         let boundary_infty: BoundaryPoint<f64> = BoundaryPoint::Infinity;
         let boundary_regular = BoundaryPoint::Regular(0.0);
 
-        assert!(h.map(&boundary_infty) == BoundaryPoint::Infinity);
-        assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(10.0));
+        assert_eq!(h.map(&boundary_infty), BoundaryPoint::Infinity);
+        assert_eq!(h.map(&boundary_regular), BoundaryPoint::Regular(10.0));
     }
 
     #[test]
@@ -105,17 +102,17 @@ mod tests {
 
         // fixed point 1
         let boundary_infty: BoundaryPoint<f64> = BoundaryPoint::Infinity;
-        assert!(h.map(&boundary_infty) == BoundaryPoint::Infinity);
+        assert_eq!(h.map(&boundary_infty), BoundaryPoint::Infinity);
 
         // fixed point 2
         let boundary_regular = BoundaryPoint::Regular(0.0);
-        assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(0.0));
+        assert_eq!(h.map(&boundary_regular), BoundaryPoint::Regular(0.0));
 
         // no fixed point
         let boundary_regular = BoundaryPoint::Regular(1.0);
-        assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(25.0));
+        assert_eq!(h.map(&boundary_regular), BoundaryPoint::Regular(25.0));
         let boundary_regular = BoundaryPoint::Regular(-1.0);
-        assert!(h.map(&boundary_regular) == BoundaryPoint::Regular(-25.0));
+        assert_eq!(h.map(&boundary_regular), BoundaryPoint::Regular(-25.0));
     }
 
     // TODO: incorrect
@@ -126,15 +123,15 @@ mod tests {
         let h = MoebiusTransformation::<f64>::new(0.0, -1.0, 1.0, 0.0);
 
         let b = BoundaryPoint::Regular(0.0);
-        assert!(h.map(&b) == BoundaryPoint::Infinity);
+        assert_eq!(h.map(&b), BoundaryPoint::Infinity);
 
         let b = BoundaryPoint::Infinity;
-        assert!(h.map(&b) == BoundaryPoint::Regular(0.0));
+        assert_eq!(h.map(&b), BoundaryPoint::Regular(0.0));
 
         let b = BoundaryPoint::Regular(1.0);
-        assert!(h.map(&b) == BoundaryPoint::Regular(-1.0));
+        assert_eq!(h.map(&b), BoundaryPoint::Regular(-1.0));
 
         let b = BoundaryPoint::Regular(-1.0);
-        assert!(h.map(&b) == BoundaryPoint::Regular(1.0));
+        assert_eq!(h.map(&b), BoundaryPoint::Regular(1.0));
     }
 }

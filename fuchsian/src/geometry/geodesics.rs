@@ -1,10 +1,8 @@
 use super::boundary::BoundaryPoint;
 use crate::{
-    algebraic_extensions::{Numeric, NumericAddIdentity},
     group_action::{Action, SpecialLinear},
     moebius::MoebiusTransformation,
 };
-use std::ops::Div;
 
 /// An oriented geodesic (from `start` to `end`) in the hyperbolic upper half plane (within C) is uniquely determined by
 /// its <i>two distinct</i> endpoints on the boundary.
@@ -25,20 +23,6 @@ where
         None
     }
 }
-
-// /// Implement `Action` for Moebius transformations on Geodesics.
-// impl<T> Action<GeodesicBoundary<T>> for MoebiusTransformation<T>
-// where
-//     T: Numeric + Div<Output = T> + NumericAddIdentity + Copy,
-//     MoebiusTransformation<T>: SpecialLinear<T>,
-// {
-//     fn map(&self, x: &GeodesicBoundary<T>) -> GeodesicBoundary<T> {
-//         GeodesicBoundary {
-//             start: self.map(&x.start),
-//             end: self.map(&x.end),
-//         }
-//     }
-// }
 
 /// Implement `Action` for Moebius transformations on Geodesics.
 impl<T> Action<GeodesicBoundary<T>> for MoebiusTransformation<T>
