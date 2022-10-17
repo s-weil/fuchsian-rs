@@ -1,18 +1,17 @@
-use std::ops::Deref;
-
 use crate::{
     algebraic_extensions::{Group, MulIdentity},
     set_extensions::{SetRestriction, Wrapper},
 };
+use std::ops::Deref;
 
 pub trait Determinant<T> {
     fn det(&self) -> T;
 }
 
-impl<M, S, T> Determinant<T> for M
+impl<W, I, T> Determinant<T> for W
 where
-    M: Wrapper<Inner = S>,
-    S: Determinant<T>,
+    W: Wrapper<Inner = I>,
+    I: Determinant<T>,
 {
     fn det(&self) -> T {
         self.deref().det()

@@ -34,3 +34,5 @@ where
         self.deref().condition()
     }
 }
+
+// TODO: think how to have better "type bounds"
