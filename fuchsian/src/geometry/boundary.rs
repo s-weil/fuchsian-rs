@@ -10,7 +10,7 @@ use std::{
 };
 
 /// Boundary points of the hyperbolic (Poincare) upper half plane (within C).
-/// SpecialLinear preserves the boundary (maps a boundary points to the boundary).
+/// SpecialLinear preserves the boundary (maps boundary points to the boundary).
 pub enum BoundaryPoint<T> {
     Infinity,
     Regular(T),
@@ -72,7 +72,7 @@ where
     fn map(&self, x: &BoundaryPoint<T>) -> BoundaryPoint<T> {
         match x {
             BoundaryPoint::Infinity => {
-                // Note: a and c cannot be 0 at the same time
+                // Note: a and c cannot be 0 at the same time for regular matrices
                 if self.c.is_zero(Some(NUMERIC_THRESHOLD)) {
                     BoundaryPoint::Infinity
                 } else {
