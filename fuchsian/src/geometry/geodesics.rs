@@ -3,15 +3,11 @@ use super::{
     boundary::BoundaryPoint,
 };
 use crate::{
-    algebraic_extensions::{AddIdentity, Numeric},
     group_action::{Action, SpecialLinear},
     moebius::MoebiusTransformation,
     set_extensions::SetRestriction,
 };
-use std::{
-    ops::{Deref, Div, Sub},
-    process::Output,
-};
+
 
 /// An oriented geodesic (from `start` to `end`) in the hyperbolic upper half plane (within C) is uniquely determined by
 /// its <i>two distinct</i> endpoints on the boundary. Geometrically it will be either an Euclidean (half) line perpendicular to the real axis,

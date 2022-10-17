@@ -300,7 +300,6 @@ mod tests {
     use super::MoebiusTransformation;
     use crate::{
         algebraic_extensions::{AddIdentity, MulIdentity, NumericMulIdentity},
-        group_action::SpecialLinear,
         set_extensions::SetRestriction,
     };
 
