@@ -1,27 +1,55 @@
 use pyo3::prelude::*;
 extern crate fuchsian;
-use fuchsian::moebius::MoebiusTransformation;
-
+use fuchsian::group_action::Orbit;
+use fuchsian::{fuchsian_group::FuchsianGroup, moebius::MoebiusTransformation};
+use num_complex::Complex;
 // TODO: rename project into pyperbolic, or something with python and fuchsian / hyperbolic
 
 // run `maturin develop` after changes
+// read https://pyo3.rs/v0.2.7/overview.html
 
 #[pyfunction]
-fn moebius(a: f32, b: f32, c: f32, d: f32) -> PyResult<Vec<f32>> {
+fn moebius_matrix(a: f64, b: f64, c: f64, d: f64) -> PyResult<((f64, f64), (f64, f64))> {
     let m = MoebiusTransformation::new(a, b, c, d);
-    let mut v = Vec::with_capacity(4);
-    v.push(m.a);
-    v.push(m.b);
-    v.push(m.c);
-    v.push(m.d);
 
-    Ok(v)
+    Ok(((m.a, m.b), (m.c, m.d)))
     // Python::with_gil(|py| m.to_object(py));
+}
+
+fn parse_moebius(((a, b), (c, d)): ((f64, f64), (f64, f64))) -> MoebiusTransformation<f64> {
+    // TODO: checks
+
+    let m = MoebiusTransformation::new(a, b, c, d);
+    m
+}
+
+fn parse_complex((re, im): (f64, f64)) -> Complex<f64> {
+    // TODO: checks
+    let c = Complex::new(re, im);
+    c
+}
+
+#[pyfunction]
+fn orbit(
+    moebius: Vec<((f64, f64), (f64, f64))>,
+    base_point: (f64, f64),
+    n_pts: usize,
+) -> PyResult<Vec<(f64, f64)>> {
+    let m = moebius.into_iter().map(|m| parse_moebius(m)).collect();
+    let base_point = parse_complex(base_point);
+
+    let fuchsian_group = FuchsianGroup::create_projected(m, None);
+    let orbit = Orbit::create(&fuchsian_group, &base_point, n_pts, None);
+
+    let orbit_ves = orbit.points.into_iter().map(|c| (c.re, c.im)).collect();
+
+    Ok(orbit_ves)
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn python_api(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(moebius, m)?)?;
+    m.add_function(wrap_pyfunction!(moebius_matrix, m)?)?;
+    m.add_function(wrap_pyfunction!(orbit, m)?)?;
     Ok(())
 }
