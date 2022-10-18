@@ -1,6 +1,6 @@
 use pyo3::prelude::*;
 extern crate fuchsian;
-use fuchsian::group_action::Orbit;
+use fuchsian::group_action::{Orbit, PickGeneratorMode};
 use fuchsian::{fuchsian_group::FuchsianGroup, moebius::MoebiusTransformation};
 use num_complex::Complex;
 // TODO: rename project into pyperbolic, or something with python and fuchsian / hyperbolic
@@ -34,12 +34,22 @@ fn orbit(
     moebius: Vec<((f64, f64), (f64, f64))>,
     base_point: (f64, f64),
     n_pts: usize,
+    mode: Option<String>,
 ) -> PyResult<Vec<(f64, f64)>> {
     let m = moebius.into_iter().map(|m| parse_moebius(m)).collect();
     let base_point = parse_complex(base_point);
+    let pick_mode = if let Some(m) = mode {
+        match m.to_lowercase().trim() {
+            "random" => Some(PickGeneratorMode::Random),
+            "sequential" => Some(PickGeneratorMode::Sequential),
+            _ => todo!(), // return Err(PyErr::new("Invalid mode")),
+        }
+    } else {
+        None
+    };
 
     let fuchsian_group = FuchsianGroup::create_projected(m, None);
-    let orbit = Orbit::create(&fuchsian_group, &base_point, n_pts, None);
+    let orbit = Orbit::create(&fuchsian_group, &base_point, n_pts, pick_mode);
 
     let orbit_ves = orbit.points.into_iter().map(|c| (c.re, c.im)).collect();
 

@@ -9,6 +9,22 @@ print(elliptic)
 
 modular_group = [horocyclic, elliptic]
 
-base_point = (0.5, 1.5) # Note that i is a singularity of the modular group
-orbit = python_api.orbit(modular_group, base_point, 100)
-print(orbit)
+base_point = (1.0, 0.0) # Note that i is a singularity of the modular group
+orbit = python_api.orbit(modular_group, base_point, 100_000, "random")
+# print(orbit)
+print("generated orbit")
+
+
+###### PLOTTING ######
+
+import plotly.graph_objects as px
+
+x = [ z[0] for z in orbit ]
+y = [ z[1] for z in orbit ]
+
+plot = px.Figure(data=[px.Scatter(
+	x=x,
+	y=y,
+	mode='markers')
+])
+plot.show()

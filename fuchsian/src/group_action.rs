@@ -1,3 +1,8 @@
+use rand::{
+    distributions::{DistIter, Uniform},
+    rngs::ThreadRng,
+};
+
 use crate::{
     algebraic_extensions::{Group, MulIdentity},
     set_extensions::{SetRestriction, Wrapper},
@@ -83,6 +88,15 @@ where
     }
 }
 
+// TODO: make it feature dependent
+fn random_iter(u_bound: usize) -> DistIter<Uniform<usize>, ThreadRng, usize> {
+    use rand::{thread_rng, Rng};
+    let rng = thread_rng();
+    let gen_range = Uniform::new(0, u_bound);
+    let roll_die = rng.sample_iter(gen_range);
+    roll_die
+}
+
 impl<'a, G> Iterator for GeneratorPicker<'a, G>
 where
     G: FinitelyGeneratedGroup,
@@ -108,7 +122,22 @@ where
                 None
             }
             PickGeneratorMode::Random => {
-                todo!("create random nr within 0..length and choose random element")
+                // TODO: need nicer way here
+                let mut rand_iter = random_iter(self.generator_len * 2);
+
+                if self.cursor < self.max_n {
+                    let grp_idx = rand_iter.next().unwrap();
+
+                    let item = if grp_idx >= self.generator_len {
+                        self.group.generators()[grp_idx % self.generator_len].inv()
+                    } else {
+                        self.group.generators()[grp_idx].clone()
+                    };
+
+                    self.cursor += 1;
+                    return Some(item);
+                }
+                None
             }
         }
     }
