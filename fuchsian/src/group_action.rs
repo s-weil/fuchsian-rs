@@ -53,7 +53,7 @@ pub trait FinitelyGeneratedGroup {
     // }
 }
 
-#[derive(Default)]
+#[derive(Default, PartialEq, Eq)]
 pub enum PickGeneratorMode {
     #[default]
     Sequential,
@@ -70,6 +70,8 @@ where
     cursor: usize,
     max_n: usize,
     generator_len: usize,
+    // rand_iter: Option<DistIter<Uniform<usize>, ThreadRng, usize>>,
+    rand_iter: DistIter<Uniform<usize>, ThreadRng, usize>,
 }
 
 impl<'a, G> GeneratorPicker<'a, G>
@@ -78,12 +80,16 @@ where
     G::GroupElement: Clone,
 {
     fn new(mode: PickGeneratorMode, group: &'a G, max_n: usize) -> Self {
+        let generator_len = group.generators().len();
+        let rand_iter = random_iter(generator_len * 2);
+
         Self {
             mode,
             max_n,
             cursor: 0,
-            generator_len: group.generators().len(),
+            generator_len,
             group,
+            rand_iter,
         }
     }
 }
@@ -123,10 +129,11 @@ where
             }
             PickGeneratorMode::Random => {
                 // TODO: need nicer way here
-                let mut rand_iter = random_iter(self.generator_len * 2);
+                // let mut rand_iter = random_iter(self.generator_len * 2);
 
                 if self.cursor < self.max_n {
-                    let grp_idx = rand_iter.next().unwrap();
+                    // let grp_idx = self.rand_iter.as_mut().unwrap().next().unwrap();
+                    let grp_idx = self.rand_iter.next().unwrap();
 
                     let item = if grp_idx >= self.generator_len {
                         self.group.generators()[grp_idx % self.generator_len].inv()

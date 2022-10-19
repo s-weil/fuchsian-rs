@@ -104,8 +104,6 @@ impl<T> Arc<T> {
     where
         T: Distance<T> + Mid,
     {
-        // let distance = p1.dist(&p2);
-        // let radius = T::zero().mid(distance);
         let center = p1.mid(&p2);
         let radius = p1.dist(&center);
         Self { center, radius }

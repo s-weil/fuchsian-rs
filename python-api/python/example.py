@@ -9,9 +9,8 @@ print(elliptic)
 
 modular_group = [horocyclic, elliptic]
 
-base_point = (1.0, 0.0) # Note that i is a singularity of the modular group
-orbit = python_api.orbit(modular_group, base_point, 100_000, "random")
-# print(orbit)
+base_point = (1.0, 0.0) # Note that i = (0, 1) is a singularity of the modular group
+orbit = python_api.orbit(modular_group, base_point, 10_000, "random")
 print("generated orbit")
 
 
