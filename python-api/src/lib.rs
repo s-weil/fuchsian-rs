@@ -17,16 +17,12 @@ fn moebius_matrix(a: f64, b: f64, c: f64, d: f64) -> PyResult<((f64, f64), (f64,
 }
 
 fn parse_moebius(((a, b), (c, d)): ((f64, f64), (f64, f64))) -> MoebiusTransformation<f64> {
-    // TODO: checks
-
-    let m = MoebiusTransformation::new(a, b, c, d);
-    m
+    // TODO: check for SL
+    MoebiusTransformation::new(a, b, c, d)
 }
 
 fn parse_complex((re, im): (f64, f64)) -> Complex<f64> {
-    // TODO: checks
-    let c = Complex::new(re, im);
-    c
+    Complex::new(re, im)
 }
 
 #[pyfunction]
@@ -36,7 +32,7 @@ fn orbit(
     n_pts: usize,
     mode: Option<String>,
 ) -> PyResult<Vec<(f64, f64)>> {
-    let m = moebius.into_iter().map(|m| parse_moebius(m)).collect();
+    let m = moebius.into_iter().map(parse_moebius).collect();
     let base_point = parse_complex(base_point);
     let pick_mode = if let Some(m) = mode {
         match m.to_lowercase().trim() {
@@ -49,7 +45,7 @@ fn orbit(
     };
 
     let fuchsian_group = FuchsianGroup::create_projected(m, None);
-    let orbit = Orbit::create(&fuchsian_group, &base_point, n_pts, pick_mode);
+    let orbit = Orbit::sample(&fuchsian_group, &base_point, n_pts, pick_mode);
 
     let orbit_ves = orbit.points.into_iter().map(|c| (c.re, c.im)).collect();
 
