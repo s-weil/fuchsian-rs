@@ -1,11 +1,10 @@
-use rand::{
-    distributions::{DistIter, Uniform},
-    rngs::ThreadRng,
-};
-
 use crate::{
     algebraic_extensions::{Group, MulIdentity},
     set_extensions::{SetRestriction, Wrapper},
+};
+use rand::{
+    distributions::{DistIter, Uniform},
+    rngs::ThreadRng,
 };
 use std::ops::Deref;
 
@@ -45,12 +44,6 @@ pub trait FinitelyGeneratedGroup {
     type GroupElement: Group;
 
     fn generators(&self) -> &[Self::GroupElement];
-    // fn inverse_generators(&self) -> &[Self::GroupElement];
-
-    // TODO: add inverse set?
-    // fn inverse_generators(&self) -> &[Self::GroupElement] {
-    //     self.generators().iter()
-    // }
 }
 
 #[derive(Default, PartialEq, Eq)]
@@ -61,32 +54,82 @@ pub enum PickGeneratorMode {
     // Single(a) ?
 }
 
-struct GeneratorPicker<'a, G> {
-    mode: PickGeneratorMode,
+struct SequentialPicker<'a, G> {
     generators: &'a Vec<G>,
     cursor: usize,
     max_n: usize,
     generator_len: usize,
-    // rand_iter: Option<DistIter<Uniform<usize>, ThreadRng, usize>>,
-    rand_iter: DistIter<Uniform<usize>, ThreadRng, usize>,
 }
 
-impl<'a, G> GeneratorPicker<'a, G>
+impl<'a, G> SequentialPicker<'a, G>
 where
     G: Clone,
 {
-    fn new(mode: PickGeneratorMode, generators: &'a Vec<G>, max_n: usize) -> Self {
+    fn new(generators: &'a Vec<G>, max_n: usize) -> Self {
         let generator_len = generators.len();
-        let rand_iter = random_iter(generator_len);
 
         Self {
-            mode,
             max_n,
             cursor: 0,
             generator_len,
             generators,
-            rand_iter,
         }
+    }
+}
+
+impl<'a, G> Iterator for SequentialPicker<'a, G>
+where
+    G: Clone,
+{
+    type Item = G;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.cursor < self.max_n {
+            let item = self.generators[(self.cursor % self.generator_len)].clone();
+            self.cursor += 1;
+            return Some(item);
+        }
+        None
+    }
+}
+
+struct RandomPicker<'a, G> {
+    generators: &'a Vec<G>,
+    cursor: usize,
+    max_n: usize,
+    rand_iter: DistIter<Uniform<usize>, ThreadRng, usize>,
+}
+
+impl<'a, G> RandomPicker<'a, G>
+where
+    G: Clone,
+{
+    fn new(generators: &'a Vec<G>, max_n: usize) -> Self {
+        let rand_iter = random_iter(generators.len());
+
+        Self {
+            max_n,
+            cursor: 0,
+            rand_iter,
+            generators,
+        }
+    }
+}
+
+impl<'a, G> Iterator for RandomPicker<'a, G>
+where
+    G: Clone,
+{
+    type Item = G;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.cursor < self.max_n {
+            let grp_idx = self.rand_iter.next().unwrap();
+            let item = self.generators[grp_idx].clone();
+            self.cursor += 1;
+            return Some(item);
+        }
+        None
     }
 }
 
@@ -96,36 +139,6 @@ fn random_iter(u_bound: usize) -> DistIter<Uniform<usize>, ThreadRng, usize> {
     let rng = thread_rng();
     let gen_range = Uniform::new(0, u_bound);
     rng.sample_iter(gen_range)
-}
-
-impl<'a, G> Iterator for GeneratorPicker<'a, G>
-where
-    G: Clone,
-{
-    type Item = G;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        match self.mode {
-            PickGeneratorMode::Sequential => {
-                if self.cursor < self.max_n {
-                    let item = self.generators[(self.cursor % self.generator_len)].clone();
-                    self.cursor += 1;
-                    return Some(item);
-                }
-                None
-            }
-            PickGeneratorMode::Random => {
-                if self.cursor < self.max_n {
-                    // let grp_idx = self.rand_iter.as_mut().unwrap().next().unwrap();
-                    let grp_idx = self.rand_iter.next().unwrap();
-                    let item = self.generators[grp_idx].clone();
-                    self.cursor += 1;
-                    return Some(item);
-                }
-                None
-            }
-        }
-    }
 }
 
 pub trait Action<Space> {
@@ -166,7 +179,6 @@ where
     Space: Sized,
 {
     pub points: Vec<Space>,
-    // generators: &'a G,
 }
 
 impl<Space> Orbit<Space>
@@ -185,7 +197,6 @@ where
         Space: Clone,
     {
         let mut points = Vec::with_capacity(n_points);
-        let pick_mode = pick_generator.unwrap_or_default();
 
         let mut generators = Vec::with_capacity(2 * group.generators().len());
         for g in group.generators().iter() {
@@ -193,17 +204,25 @@ where
             generators.push(g.inv().clone());
         }
 
-        let generator = GeneratorPicker::new(pick_mode, &generators, n_points);
         let mut point_cursor = base_point.clone();
 
-        for g in generator {
-            point_cursor = g.map(&point_cursor);
-            points.push(point_cursor.clone());
-        }
+        match pick_generator.unwrap_or_default() {
+            PickGeneratorMode::Sequential => {
+                let generator = SequentialPicker::new(&generators, n_points);
+                for g in generator {
+                    point_cursor = g.map(&point_cursor);
+                    points.push(point_cursor.clone());
+                }
+            }
+            PickGeneratorMode::Random => {
+                let generator = RandomPicker::new(&generators, n_points);
+                for g in generator {
+                    point_cursor = g.map(&point_cursor);
+                    points.push(point_cursor.clone());
+                }
+            }
+        };
 
-        Self {
-            points,
-            // generators: group,
-        }
+        Self { points }
     }
 }
