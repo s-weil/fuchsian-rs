@@ -103,8 +103,8 @@ where
 
 /// The parametrization of a geodesic line in case of an arc.
 pub struct Arc<T> {
-    center: T,
-    radius: T,
+    pub center: T,
+    pub radius: T,
 }
 
 impl<T> PartialEq for Arc<T>

@@ -1,16 +1,16 @@
 import python_api
 
 
-horocyclic = python_api.moebius_matrix(1.0, 1.0, 0.0, 1.0);
+horocyclic = python_api.moebius_matrix(1.0, 1.0, 0.0, 1.0)
 print(horocyclic)
 
-elliptic= python_api.moebius_matrix(0.0, -1.0, 1.0, 0.0);
+elliptic= python_api.moebius_matrix(0.0, -1.0, 1.0, 0.0)
 print(elliptic)
 
 modular_group = [horocyclic, elliptic]
 
 base_point = (1.0, 0.0) # Note that i = (0, 1) is a singularity of the modular group
-orbit = python_api.orbit(modular_group, base_point, 10_000, "random")
+orbit = python_api.orbit(modular_group, base_point, 100_000, "random")
 print("generated orbit")
 
 
