@@ -33,12 +33,12 @@ fn parse_geodesic_boundary((start, end): (f64, f64)) -> GeodesicBoundary<f64> {
 
 fn plot_euclidean_arc(arc: Arc<f64>, n_curve_pts: usize) -> Vec<(f64, f64)> {
     let mut curve = Vec::with_capacity(n_curve_pts);
-    let angle_step = std::f64::consts::PI / (2.0 * n_curve_pts as f64);
+    let angle_step = std::f64::consts::PI / (n_curve_pts as f64);
     let mut angle: f64 = 0.0;
-    for _ in 0..n_curve_pts {
+    for _ in 0..=n_curve_pts {
         curve.push((
-            arc.center - arc.radius * angle.cos(),
-            arc.center - arc.radius * angle.sin(),
+            arc.center + arc.radius * angle.cos(),
+            arc.radius * angle.sin(),
         ));
         angle += angle_step;
     }
