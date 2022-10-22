@@ -55,10 +55,7 @@ fn plot_geodesic(geodesic_boundary: GeodesicBoundary<f64>, n_curve_pts: usize) -
 
     match line {
         GeodesicLine::Line(b) => {
-            let mut curve = Vec::with_capacity(2);
-            curve.push((b, 0.0));
-            curve.push((b, n_curve_pts as f64));
-            curve
+            vec![(b, 0.0), (b, n_curve_pts as f64)]
         }
         GeodesicLine::Arc(arc) => plot_euclidean_arc(arc, n_curve_pts),
     }
@@ -83,10 +80,10 @@ fn plot_horocycle(horocycle: HoroCycle<f64>, n_curve_pts: usize) -> Vec<(f64, f6
 
     match eucl_hc {
         ParametricHoroCycle::Line(height) => {
-            let mut curve = Vec::with_capacity(2);
-            curve.push((-(n_curve_pts as f64), height));
-            curve.push((n_curve_pts as f64, height));
-            curve
+            vec![
+                (-(n_curve_pts as f64), height),
+                (n_curve_pts as f64, height),
+            ]
         }
         ParametricHoroCycle::Circle(eucl_circle) => plot_euclidean_circle(eucl_circle, n_curve_pts),
     }
