@@ -10,7 +10,8 @@ print(elliptic)
 modular_group = [horocyclic, elliptic]
 
 geodesic_end_points = (-1.0, 1.0) 
-geodesic_orbit = python_api.geodesic_orbit(modular_group, geodesic_end_points, 10_000, 20, "random")
+# geodesic_orbit = python_api.geodesic_orbit(modular_group, geodesic_end_points, 10_000, 20, "random")
+geodesic_orbit = python_api.geodesic_orbit(modular_group, geodesic_end_points, 1_000, 20, "sequential")
 print("generated geodesic orbit")
 
 

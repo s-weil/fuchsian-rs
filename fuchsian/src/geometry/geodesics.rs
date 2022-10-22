@@ -8,10 +8,10 @@ use crate::{
     set_extensions::SetRestriction,
 };
 
-/// An oriented geodesic (from `start` to `end`) in the hyperbolic upper half plane (within C) is uniquely determined by
+/// An `oriented geodesic` (from `start` to `end`) in the hyperbolic upper half plane (within C) is uniquely determined by
 /// its <i>two distinct</i> endpoints on the boundary. Geometrically it will be either an Euclidean (half) line perpendicular to the real axis,
 /// or, an Euclidean arc (half circle) with center on the real axis.
-/// SpecialLinear preserves geodescis (maps geodesics to geodesics).
+/// `SpecialLinear` preserves geodescis (maps geodesics to geodesics).
 pub struct GeodesicBoundary<T> {
     start: BoundaryPoint<T>,
     end: BoundaryPoint<T>,
@@ -252,9 +252,5 @@ mod tests {
         let orbit = Orbit::sample(&fuchsian_group, &geodesic_arc, 100, None);
 
         assert_eq!(orbit.points.len(), 100);
-        for p in orbit.points.iter() {
-            assert_ne!(p.start, BoundaryPoint::Infinity);
-            assert_ne!(p.end, BoundaryPoint::Infinity);
-        }
     }
 }

@@ -33,7 +33,7 @@ fn parse_geodesic_boundary((start, end): (f64, f64)) -> GeodesicBoundary<f64> {
 }
 
 fn parse_horocycle(height: f64) -> HoroCycle<f64> {
-    HoroCycle::new(BoundaryPoint::Infinity, height)
+    HoroCycle::new(height)
 }
 
 fn plot_euclidean_arc(arc: Arc<f64>, n_curve_pts: usize) -> Vec<(f64, f64)> {
@@ -76,9 +76,9 @@ fn plot_euclidean_circle(circle: EuclieanCircle<f64>, n_curve_pts: usize) -> Vec
 }
 
 fn plot_horocycle(horocycle: HoroCycle<f64>, n_curve_pts: usize) -> Vec<(f64, f64)> {
-    let eucl_hc = ParametricHoroCycle::from(horocycle);
+    let hc = ParametricHoroCycle::from(horocycle);
 
-    match eucl_hc {
+    match hc {
         ParametricHoroCycle::Line(height) => {
             vec![
                 (-(n_curve_pts as f64), height),

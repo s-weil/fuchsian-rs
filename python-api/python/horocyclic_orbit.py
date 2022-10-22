@@ -9,8 +9,8 @@ print(elliptic)
 
 modular_group = [horocyclic, elliptic]
 
-horocycle_height = 2.0
-horocyclic_orbit = python_api.horocyclic_orbit(modular_group, horocycle_height, 10, 30, "random")
+horocycle_height = 1.0
+horocyclic_orbit = python_api.horocyclic_orbit(modular_group, horocycle_height, 100, 30, "sequential")
 print("generated geodesic orbit")
 
 
