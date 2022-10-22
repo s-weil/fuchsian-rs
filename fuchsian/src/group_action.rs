@@ -51,7 +51,6 @@ pub enum PickGeneratorMode {
     #[default]
     Sequential,
     Random,
-    // Single(a) ?
 }
 
 struct SequentialPicker<'a, G> {
@@ -199,9 +198,16 @@ where
         let mut points = Vec::with_capacity(n_points);
 
         let mut generators = Vec::with_capacity(2 * group.generators().len());
-        for g in group.generators().iter() {
-            generators.push(g.clone());
-            generators.push(g.inv().clone());
+        if group.generators().len() > 1 {
+            // order of adding generators is important, so that an element with its inverse don't cancel each other immediately
+            for g in group.generators().iter() {
+                generators.push(g.clone());
+            }
+            for g in group.generators().iter() {
+                generators.push(g.inv().clone());
+            }
+        } else if let Some(g) = group.generators().iter().next() {
+            generators.push(g.clone())
         }
 
         let mut point_cursor = base_point.clone();
@@ -224,5 +230,37 @@ where
         };
 
         Self { points }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::SequentialPicker;
+
+    #[test]
+    fn test_sequential_picker() {
+        let group_generators = vec![2.0, 0.5];
+        let picker = SequentialPicker::new(&group_generators, 5);
+
+        let mut picker_iter = picker.into_iter();
+
+        assert_eq!(picker_iter.next(), Some(2.0));
+        assert_eq!(picker_iter.next(), Some(0.5));
+        assert_eq!(picker_iter.next(), Some(2.0));
+        assert_eq!(picker_iter.next(), Some(0.5));
+        assert_eq!(picker_iter.next(), Some(2.0));
+        assert_eq!(picker_iter.next(), None);
+
+        let group_generators = vec![2.0, 0.5, -4.0, -0.25];
+        let picker = SequentialPicker::new(&group_generators, 5);
+
+        let mut picker_iter = picker.into_iter();
+
+        assert_eq!(picker_iter.next(), Some(2.0));
+        assert_eq!(picker_iter.next(), Some(0.5));
+        assert_eq!(picker_iter.next(), Some(-4.0));
+        assert_eq!(picker_iter.next(), Some(-0.25));
+        assert_eq!(picker_iter.next(), Some(2.0));
+        assert_eq!(picker_iter.next(), None);
     }
 }
