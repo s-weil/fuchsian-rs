@@ -1,241 +1,179 @@
-use super::{basics::Mid, boundary::BoundaryPoint};
+use super::{
+    basics::{Drawable2d, EuclideanCircle, Mid},
+    boundary::BoundaryPoint,
+};
 use crate::{
     algebraic_extensions::{AddIdentity, MulIdentity, Numeric, NumericAddIdentity},
     group_action::{Action, SpecialLinear},
     moebius::MoebiusTransformation,
-    NUMERIC_THRESHOLD,
 };
 use num_complex::Complex;
-use std::ops::{Div, Mul};
+use std::ops::Div;
 
-pub struct HoroCycle<T> {
-    /// The `touchpoint` at infinity.
-    pub boundary: BoundaryPoint<T>,
-    pub height: T,
-    pub scale: T,
-}
+/// A [`HoroCycle`](https://en.wikipedia.org/wiki/Horocycle) in the hyperbolic space
+/// is in general defined as the level set of a [`Busemann function`](https://en.wikipedia.org/wiki/Busemann_function) of a boundary point `$\xi$`,
+/// For simplicity we avoid this definition and use of the geometric outcomes in the (Poincare) upper half plane (within C), namely:
+/// - $H_t$, a line parallel to the real axis at Euclidean height $t$ corresponding to the level set $Im(z) = t$, or,
+/// - an Eucldiean circle tangent to the real axis
 
-impl<T> HoroCycle<T> {
-    pub fn new(height: T) -> Self
-    where
-        T: MulIdentity,
-    {
-        Self {
-            boundary: BoundaryPoint::Infinity,
-            height,
-            scale: MulIdentity::one(),
-        }
-    }
-}
-
-impl<T> PartialEq for HoroCycle<T>
-where
-    BoundaryPoint<T>: PartialEq,
-    T: PartialEq,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.boundary == other.boundary && self.height == other.height
-    }
-}
-impl<T> Eq for HoroCycle<T>
-where
-    BoundaryPoint<T>: PartialEq,
-    T: PartialEq,
-{
-}
-impl<T> Copy for HoroCycle<T> where T: Copy {}
-impl<T> Clone for HoroCycle<T>
-where
-    T: Clone,
-{
-    fn clone(&self) -> HoroCycle<T> {
-        HoroCycle {
-            boundary: self.boundary.clone(),
-            height: self.height.clone(),
-            scale: self.scale.clone(),
-        }
-    }
-}
-
-/// Implement Action for Moebius transformations on the boundary.
-impl<T> Action<HoroCycle<T>> for MoebiusTransformation<T>
-where
-    MoebiusTransformation<T>: SpecialLinear<T> + Action<BoundaryPoint<T>>,
-    T: Numeric + Copy + NumericAddIdentity + Div<Output = T>,
-{
-    fn map(&self, x: &HoroCycle<T>) -> HoroCycle<T> {
-        match x.boundary {
-            BoundaryPoint::Infinity => {
-                let scale = if self.c.is_zero(Some(NUMERIC_THRESHOLD)) {
-                    x.scale
-                } else {
-                    x.scale / (self.c * self.c) // / 2.0
-                };
-
-                HoroCycle {
-                    boundary: self.map(&x.boundary),
-                    scale,
-                    height: x.height,
-                }
-            }
-            BoundaryPoint::Regular(t) => {
-                let denom = self.c * t + self.d;
-
-                if denom.is_zero(Some(NUMERIC_THRESHOLD)) {
-                    HoroCycle {
-                        boundary: self.map(&x.boundary),
-                        scale: x.scale / x.scale, // TODO: require MulIdentity
-                        height: x.height,
-                    }
-                } else {
-                    let scale = x.scale / (denom * denom); // TODO: is this correct?
-                    HoroCycle {
-                        boundary: self.map(&x.boundary),
-                        scale,
-                        height: x.height,
-                    }
-                }
-            }
-        }
-    }
-}
-
-pub enum ParametricHoroCycle<T> {
+pub enum GeometricHorocCycle<T> {
     /// A half-circle with center on the real axis within C
-    Circle(EuclieanCircle<T>),
-    /// A half-line perpendicular to the real axis within C
-    Line(T), // height / distance to the real line
+    TangencyCircle(TangencyCircle<T>),
+    /// $H_t$ A half-line (level set Im(z) = t) perpendicular to the real axis within C
+    Line(T),
 }
 
-/// The parametrization of a Euclidean circle in C.
-pub struct EuclieanCircle<T> {
-    pub center: Complex<T>,
-    pub radius: T,
-}
-
-impl<T> PartialEq for EuclieanCircle<T>
-where
-    T: PartialEq,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.center == other.center && self.radius == other.radius
+impl<T> GeometricHorocCycle<T> {
+    pub fn new(t: T) -> Self {
+        Self::Line(t)
     }
-}
-impl<T> Eq for EuclieanCircle<T> where T: PartialEq {}
 
-impl<T> From<HoroCycle<T>> for ParametricHoroCycle<T>
-where
-    // T: Clone,
-    T: Clone + Mul<Output = T> + Div<Output = T> + Mid + AddIdentity,
-{
-    fn from(hc: HoroCycle<T>) -> Self {
-        match hc.boundary {
-            BoundaryPoint::Infinity => {
-                ParametricHoroCycle::Line(hc.scale.clone() * hc.height.clone())
-            }
-            BoundaryPoint::Regular(b) => {
-                let diameter = hc.scale.clone() / hc.height.clone();
-                let zero: T = AddIdentity::zero();
-                let radius = zero.mid(&diameter);
-                let center = Complex::<T>::new(b, radius.clone());
-                ParametricHoroCycle::Circle(EuclieanCircle { center, radius })
+    pub fn boundary_point(&self) -> BoundaryPoint<T>
+    where
+        T: Clone,
+    {
+        match self {
+            Self::Line(_) => BoundaryPoint::Infinity,
+            Self::TangencyCircle(TangencyCircle { boundary, .. }) => {
+                BoundaryPoint::Regular(boundary.clone())
             }
         }
     }
 }
 
-/* TODO: generalize below
-
-
-/// The [`HoroCycle`](https://en.wikipedia.org/wiki/Horocycle) in the hyperbolic (Poincare) upper half plane (within C)
-/// is either a `Euclidean` circle tangent to the boundary line, i.e. based at a boundary point (the touchpoint), or,
-/// the boundary of a half-plane parallel to the real line.
-/// `SpecialLinear` preserves horocycles (maps horocycles to horocycles).
-/// Given the [`Busemann function`](https://en.wikipedia.org/wiki/Busemann_function) of a boundary point `$\xi$`,
-/// the level sets of this function correspond to horocycles based at `$\xi$` and exhaust the hyperbolic space.
-/// Conversely, each `horocycle` is the level set of a Busemann function.
-///
-/// <b>Disclaimer</b>
-/// For simplicity, we will use a `height function` in the following which is the Busemann function based at `$\infty$`
-/// such that the Horocycle `Im(z) == 1` is the levelset of `0`.
-///
-pub struct HoroCycle<T> {
-    /// The `touchpoint` at infinity.
-    pub boundary: BoundaryPoint<T>,
-    /// The Busemann distance of the horocycle () SADASDASDASDASD
-    pub height: T,
-}
-
-impl<T> HoroCycle<T> {
-    pub fn new(boundary: BoundaryPoint<T>, height: T) -> Self {
-        Self { boundary, height }
+impl<T> Default for GeometricHorocCycle<T>
+where
+    T: MulIdentity,
+{
+    fn default() -> Self {
+        GeometricHorocCycle::Line(MulIdentity::one())
     }
 }
 
-impl<T> PartialEq for HoroCycle<T>
+pub struct TangencyCircle<T> {
+    /// The `touchpoint` at infinity.
+    boundary: T,
+    diameter: T,
+}
+
+impl<T> PartialEq for TangencyCircle<T>
 where
-    BoundaryPoint<T>: PartialEq,
     T: PartialEq,
 {
     fn eq(&self, other: &Self) -> bool {
-        self.boundary == other.boundary && self.height == other.height
+        self.boundary == other.boundary && self.diameter == other.diameter
     }
 }
-impl<T> Eq for HoroCycle<T>
-where
-    BoundaryPoint<T>: PartialEq,
-    T: PartialEq,
-{
-}
-impl<T> Copy for HoroCycle<T> where T: Copy {}
-impl<T> Clone for HoroCycle<T>
+impl<T> Eq for TangencyCircle<T> where TangencyCircle<T>: PartialEq {}
+impl<T> Clone for TangencyCircle<T>
 where
     T: Clone,
 {
-    fn clone(&self) -> HoroCycle<T> {
-        HoroCycle {
+    fn clone(&self) -> TangencyCircle<T> {
+        TangencyCircle {
             boundary: self.boundary.clone(),
-            height: self.height.clone(),
+            diameter: self.diameter.clone(),
+        }
+    }
+}
+
+impl<T> From<&TangencyCircle<T>> for EuclideanCircle<T>
+where
+    T: Clone + Mid + AddIdentity,
+{
+    fn from(circle: &TangencyCircle<T>) -> Self {
+        let zero: T = AddIdentity::zero();
+        let radius = zero.mid(&circle.diameter);
+        let center = Complex::<T>::new(circle.boundary.clone(), radius.clone());
+        EuclideanCircle { center, radius }
+    }
+}
+
+impl<T> PartialEq for GeometricHorocCycle<T>
+where
+    TangencyCircle<T>: PartialEq,
+    T: PartialEq,
+{
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (GeometricHorocCycle::Line(t), GeometricHorocCycle::Line(s)) => s == t,
+            (GeometricHorocCycle::TangencyCircle(t), GeometricHorocCycle::TangencyCircle(s)) => {
+                s == t
+            }
+            _ => false,
+        }
+    }
+}
+impl<T> Eq for GeometricHorocCycle<T> where GeometricHorocCycle<T>: PartialEq {}
+impl<T> Clone for GeometricHorocCycle<T>
+where
+    T: Clone,
+    TangencyCircle<T>: Clone,
+{
+    fn clone(&self) -> GeometricHorocCycle<T> {
+        match self {
+            GeometricHorocCycle::Line(t) => GeometricHorocCycle::Line(t.clone()),
+            GeometricHorocCycle::TangencyCircle(t) => {
+                GeometricHorocCycle::TangencyCircle(t.clone())
+            }
         }
     }
 }
 
 /// Implement Action for Moebius transformations on the boundary.
-impl<T> Action<HoroCycle<T>> for MoebiusTransformation<T>
+impl<T> Action<GeometricHorocCycle<T>> for MoebiusTransformation<T>
 where
     MoebiusTransformation<T>: SpecialLinear<T> + Action<BoundaryPoint<T>>,
-    T: Copy + NumericAddIdentity + Mul<Output = T> + Div<Output = T>,
+    T: Numeric + Copy + NumericAddIdentity + Div<Output = T> + MulIdentity,
 {
-    fn map(&self, x: &HoroCycle<T>) -> HoroCycle<T> {
-        let height = if self.c.is_zero(Some(NUMERIC_THRESHOLD)) {
-            x.height
-        } else {
-            // (1.0 - self.c * self.c) / self.c
-            // TODO: this is wrong!
-            x.height / (self.c * self.c)
-        };
-        HoroCycle {
-            boundary: self.map(&x.boundary),
-            height,
-        }
-    }
-}
-
-/ TODO: clarify and correct the relation between height and radius
-impl<T> From<HoroCycle<T>> for ParametricHoroCycle<T>
-where
-    T: Clone,
-{
-    fn from(hc: HoroCycle<T>) -> Self {
-        match hc.boundary {
-            BoundaryPoint::Infinity => ParametricHoroCycle::Line(hc.height),
-            BoundaryPoint::Regular(b) => {
-                let radius = hc.height.clone(); // sqrt / 2?
-                let center = Complex::<T>::new(b, radius.clone());
-                ParametricHoroCycle::Circle(EuclieanCircle { center, radius })
+    fn map(&self, x: &GeometricHorocCycle<T>) -> GeometricHorocCycle<T> {
+        let mapped_boundary = self.map(&x.boundary_point());
+        match x {
+            GeometricHorocCycle::Line(t) => {
+                // See Dal'bo Lemma 3.19, page 30
+                match mapped_boundary {
+                    BoundaryPoint::Infinity => GeometricHorocCycle::Line(*t), // case c=0, must be a horocyclic isometry already
+                    BoundaryPoint::Regular(boundary) => {
+                        let one: T = MulIdentity::one();
+                        let diameter = one / (*t * self.c * self.c);
+                        let circle = TangencyCircle { boundary, diameter };
+                        GeometricHorocCycle::TangencyCircle(circle)
+                    }
+                }
+            }
+            GeometricHorocCycle::TangencyCircle(circle) => {
+                match mapped_boundary {
+                    BoundaryPoint::Infinity => {
+                        let h = circle.diameter * self.c * self.c;
+                        let one: T = MulIdentity::one();
+                        GeometricHorocCycle::Line(one / h)
+                    }
+                    BoundaryPoint::Regular(boundary) => {
+                        // case denom != 0
+                        let denom = self.c * circle.boundary + self.d;
+                        let diameter = circle.diameter / (denom * denom);
+                        let circle = TangencyCircle { boundary, diameter };
+                        GeometricHorocCycle::TangencyCircle(circle)
+                    }
+                }
             }
         }
     }
 }
 
-*/
+impl Drawable2d<f64> for GeometricHorocCycle<f64> {
+    fn draw(&self, n_curve_points: usize) -> Vec<(f64, f64)> {
+        match self {
+            GeometricHorocCycle::Line(height) => {
+                vec![
+                    (-(n_curve_points as f64), *height),
+                    (n_curve_points as f64, *height),
+                ]
+            }
+            GeometricHorocCycle::TangencyCircle(tangency_circle) => {
+                let eucl_circle = EuclideanCircle::from(tangency_circle);
+                eucl_circle.draw(n_curve_points)
+            }
+        }
+    }
+}

@@ -24,7 +24,7 @@ fig = go.Figure()
 for geodesic in geodesic_orbit:
     x = [ z[0] for z in geodesic ]
     y = [ z[1] for z in geodesic ]
-    fig.add_trace(go.Line(x=x, y=y, mode='lines'))
+    fig.add_trace(go.scatter.Line(x=x, y=y, mode='lines'))
 
 fig.update_layout(
     title="gedeosic orbits", xaxis_title="Re", yaxis_title="Im"

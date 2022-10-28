@@ -1,5 +1,5 @@
 use super::{
-    basics::{Distance, Mid},
+    basics::{draw_euclidean_arc, Distance, Drawable2d, Mid},
     boundary::BoundaryPoint,
 };
 use crate::{
@@ -83,7 +83,7 @@ where
 /// SpecialLinear preserves the boundary (maps geodesics to geodesics).
 pub enum GeodesicLine<T> {
     /// A half-circle with center on the real axis within C
-    Arc(Arc<T>),
+    Arc(EuclideanArc<T>),
     /// A half-line perpendicular to the real axis within C
     Line(T), // touchpoint
 }
@@ -102,12 +102,12 @@ where
 }
 
 /// The parametrization of a geodesic line in case of an arc.
-pub struct Arc<T> {
+pub struct EuclideanArc<T> {
     pub center: T,
     pub radius: T,
 }
 
-impl<T> PartialEq for Arc<T>
+impl<T> PartialEq for EuclideanArc<T>
 where
     T: PartialEq,
 {
@@ -115,9 +115,9 @@ where
         self.center == other.center && self.radius == other.radius
     }
 }
-impl<T> Eq for Arc<T> where T: PartialEq {}
+impl<T> Eq for EuclideanArc<T> where T: PartialEq {}
 
-impl<T> Arc<T> {
+impl<T> EuclideanArc<T> {
     pub fn from_antipodal(p1: T, p2: T) -> Self
     where
         T: Distance<T> + Mid,
@@ -131,7 +131,7 @@ impl<T> Arc<T> {
 // /// NOTE: for T in { i8, i32, i64 } etc, there is in general NO unique geodesic parametrization
 impl<T> From<GeodesicBoundary<T>> for GeodesicLine<T>
 where
-    T: Distance<T> + Mid,
+    T: Distance<T> + Mid + PartialEq,
 {
     fn from(gb: GeodesicBoundary<T>) -> Self {
         // if &gb.start == &gb.end {
@@ -140,11 +140,22 @@ where
         match (gb.start, gb.end) {
             (BoundaryPoint::Infinity, BoundaryPoint::Regular(t))
             | (BoundaryPoint::Regular(t), BoundaryPoint::Infinity) => GeodesicLine::Line(t),
-            (BoundaryPoint::Regular(s), BoundaryPoint::Regular(e)) => {
-                let arc = Arc::from_antipodal(s, e);
+            (BoundaryPoint::Regular(s), BoundaryPoint::Regular(e)) if s != e => {
+                let arc = EuclideanArc::from_antipodal(s, e);
                 GeodesicLine::Arc(arc)
             }
-            _ => panic!("not possible"),
+            _ => panic!("Irregular combination of geodesic boundary points"),
+        }
+    }
+}
+
+impl Drawable2d<f64> for GeodesicLine<f64> {
+    fn draw(&self, n_curve_points: usize) -> Vec<(f64, f64)> {
+        match self {
+            GeodesicLine::Line(b) => {
+                vec![(*b, 0.0), (*b, n_curve_points as f64)]
+            }
+            GeodesicLine::Arc(arc) => draw_euclidean_arc(arc.center, arc.radius, n_curve_points),
         }
     }
 }
@@ -154,7 +165,7 @@ mod tests {
     use super::{GeodesicBoundary, GeodesicLine};
     use crate::{
         fuchsian_group::{FuchsianGroup, SpecialLinearMoebiusTransformation},
-        geometry::{boundary::BoundaryPoint, geodesics::Arc},
+        geometry::{boundary::BoundaryPoint, geodesics::EuclideanArc},
         group_action::{Action, Orbit},
         moebius,
         moebius::MoebiusTransformation,
@@ -174,7 +185,7 @@ mod tests {
             start: BoundaryPoint::Regular(2.0),
             end: BoundaryPoint::Regular(-2.0),
         };
-        let l2 = GeodesicLine::Arc(Arc {
+        let l2 = GeodesicLine::Arc(EuclideanArc {
             center: 0.0,
             radius: 2.0,
         });
@@ -192,7 +203,7 @@ mod tests {
             end: BoundaryPoint::Regular(-1.0),
         };
         let mg = sl.map(&g);
-        let l = GeodesicLine::Arc(Arc {
+        let l = GeodesicLine::Arc(EuclideanArc {
             center: 0.0,
             radius: 4.0,
         });
@@ -218,7 +229,7 @@ mod tests {
             end: BoundaryPoint::Regular(-1.0),
         };
         let mg = sl.map(&g);
-        let l = GeodesicLine::Arc(Arc {
+        let l = GeodesicLine::Arc(EuclideanArc {
             center: 3.0,
             radius: 1.0,
         });
