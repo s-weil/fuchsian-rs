@@ -162,7 +162,7 @@ where
                     BoundaryPoint::Regular(boundary) => {
                         // case denom != 0
                         let denom = self.c * circle.boundary + self.d;
-                        let diameter = circle.diameter / (denom * denom);
+                        let diameter = circle.diameter / (denom * denom); // TODO: not correct
                         let circle = TangencyCircle { boundary, diameter };
                         GeometricHorocCycle::TangencyCircle(circle)
                     }

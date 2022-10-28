@@ -10,7 +10,8 @@ print(horocyclic)
 elliptic= python_api.moebius_matrix(0.0, -1.0, 1.0, 0.0)
 print(elliptic)
 
-modular_group = [horocyclic, elliptic]
+# modular_group = [horocyclic, elliptic]
+modular_group = [horocyclic, elliptic, elliptic, horocyclic]
 
 # Euclidean height
 horocycle_height = 2.0
