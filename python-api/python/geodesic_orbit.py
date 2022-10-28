@@ -1,5 +1,7 @@
 import python_api
 
+###########################
+###### MODULAR GROUP ######
 
 horocyclic = python_api.moebius_matrix(1.0, 1.0, 0.0, 1.0)
 print(horocyclic)
@@ -11,7 +13,7 @@ modular_group = [horocyclic, elliptic]
 
 geodesic_end_points = (-1.0, 1.0) 
 # geodesic_orbit = python_api.geodesic_orbit(modular_group, geodesic_end_points, 10_000, 20, "random")
-geodesic_orbit = python_api.geodesic_orbit(modular_group, geodesic_end_points, 1_000, 20, "sequential")
+geodesic_orbit = python_api.geodesic_orbit(modular_group, geodesic_end_points, 10, 20, "sequential")
 print("generated geodesic orbit")
 
 
@@ -24,7 +26,69 @@ fig = go.Figure()
 for geodesic in geodesic_orbit:
     x = [ z[0] for z in geodesic ]
     y = [ z[1] for z in geodesic ]
-    fig.add_trace(go.scatter.Line(x=x, y=y, mode='lines'))
+    fig.add_trace(go.Line(x=x, y=y, mode='lines'))
+
+fig.update_layout(
+    title="gedeosic orbits", xaxis_title="Re", yaxis_title="Im"
+)
+    
+fig.show()
+
+
+###########################
+###### HYPERBOLIC #########
+
+# hyperbolic has 2 fixed points on the boundary, 0 and infty
+hyperbolic = python_api.moebius_matrix(5.0, 0.0, 0.0, 0.2)
+single_group = [ hyperbolic ]
+
+geodesic_end_points = (-10.0, 10.0) 
+
+geodesic_orbit = python_api.geodesic_orbit(single_group, geodesic_end_points, 10, 20, "sequential")
+print("generated geodesic orbit")
+
+
+###### PLOTTING ######
+
+import plotly.graph_objects as go
+
+fig = go.Figure()
+
+for geodesic in geodesic_orbit:
+    x = [ z[0] for z in geodesic ]
+    y = [ z[1] for z in geodesic ]
+    fig.add_trace(go.Line(x=x, y=y, mode='lines'))
+
+fig.update_layout(
+    title="gedeosic orbits", xaxis_title="Re", yaxis_title="Im"
+)
+    
+fig.show()
+
+
+###########################
+###### RANDOM #########
+
+# hyperbolic has 2 fixed points on the boundary, 0 and infty
+hyperbolic = python_api.moebius_matrix(2.0, 1.0, 1.0, 1.0)
+single_group = [ hyperbolic ]
+
+geodesic_end_points = (-10.0, 10.0) 
+
+geodesic_orbit = python_api.geodesic_orbit(single_group, geodesic_end_points, 10, 20, "sequential")
+print("generated geodesic orbit")
+
+
+###### PLOTTING ######
+
+import plotly.graph_objects as go
+
+fig = go.Figure()
+
+for geodesic in geodesic_orbit:
+    x = [ z[0] for z in geodesic ]
+    y = [ z[1] for z in geodesic ]
+    fig.add_trace(go.Line(x=x, y=y, mode='lines'))
 
 fig.update_layout(
     title="gedeosic orbits", xaxis_title="Re", yaxis_title="Im"

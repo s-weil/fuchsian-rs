@@ -153,7 +153,7 @@ impl Drawable2d<f64> for GeodesicLine<f64> {
     fn draw(&self, n_curve_points: usize) -> Vec<(f64, f64)> {
         match self {
             GeodesicLine::Line(b) => {
-                vec![(*b, 0.0), (*b, n_curve_points as f64)]
+                vec![(*b, 0.0), (*b, 2.0 as f64)]
             }
             GeodesicLine::Arc(arc) => draw_euclidean_arc(arc.center, arc.radius, n_curve_points),
         }
