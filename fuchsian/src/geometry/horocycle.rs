@@ -6,6 +6,7 @@ use crate::{
     algebraic_extensions::{AddIdentity, MulIdentity, Numeric, NumericAddIdentity},
     group_action::{Action, SpecialLinear},
     moebius::MoebiusTransformation,
+    NUMERIC_THRESHOLD,
 };
 use num_complex::Complex;
 use std::ops::Div;
@@ -127,21 +128,31 @@ where
     T: Numeric + Copy + NumericAddIdentity + Div<Output = T> + MulIdentity,
 {
     fn map(&self, x: &GeometricHorocCycle<T>) -> GeometricHorocCycle<T> {
-        let mapped_boundary = self.map(&x.boundary_point());
         match x {
             GeometricHorocCycle::Line(t) => {
                 // See Dal'bo Lemma 3.19, page 30
-                match mapped_boundary {
-                    BoundaryPoint::Infinity => GeometricHorocCycle::Line(*t), // case c=0, must be a horocyclic isometry already
-                    BoundaryPoint::Regular(boundary) => {
-                        let one: T = MulIdentity::one();
-                        let diameter = one / (*t * self.c * self.c);
-                        let circle = TangencyCircle { boundary, diameter };
-                        GeometricHorocCycle::TangencyCircle(circle)
+                if self.c.is_zero(Some(NUMERIC_THRESHOLD)) {
+                    // BoundaryPoint::infty is one fixed point
+                    if (self.a + (-self.d)).is_zero(Some(NUMERIC_THRESHOLD)) {
+                        GeometricHorocCycle::Line(*t)
+                    } else {
+                        // let other_fixed_point = self.a * self.b  / (1 - self.a * self.a);
+                        let height = self.a * self.a * *t;
+                        GeometricHorocCycle::Line(height)
                     }
+                } else {
+                    let one: T = MulIdentity::one();
+                    let diameter = one / (*t * self.c * self.c);
+                    let circle = TangencyCircle {
+                        boundary: self.a / self.c,
+                        diameter,
+                    };
+                    GeometricHorocCycle::TangencyCircle(circle)
                 }
             }
             GeometricHorocCycle::TangencyCircle(circle) => {
+                // TODO: do it similar with c or denom?
+                let mapped_boundary = self.map(&x.boundary_point());
                 match mapped_boundary {
                     BoundaryPoint::Infinity => {
                         let h = circle.diameter * self.c * self.c;
