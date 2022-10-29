@@ -16,7 +16,6 @@ use std::ops::Div;
 /// For simplicity we avoid this definition and use of the geometric outcomes in the (Poincare) upper half plane (within C), namely:
 /// - $H_t$, a line parallel to the real axis at Euclidean height $t$ corresponding to the level set $Im(z) = t$, or,
 /// - an Eucldiean circle tangent to the real axis
-
 pub enum GeometricHorocCycle<T> {
     /// A half-circle with center on the real axis within C
     TangencyCircle(TangencyCircle<T>),
@@ -162,7 +161,7 @@ where
                     BoundaryPoint::Regular(boundary) => {
                         // case denom != 0
                         let denom = self.c * circle.boundary + self.d;
-                        let diameter = circle.diameter / (denom * denom);
+                        let diameter = circle.diameter / (denom * denom); // TODO: correct?
                         let circle = TangencyCircle { boundary, diameter };
                         GeometricHorocCycle::TangencyCircle(circle)
                     }

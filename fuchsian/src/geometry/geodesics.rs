@@ -40,7 +40,7 @@ where
         self.start == other.end && self.end == other.end
     }
 }
-impl<T> Eq for GeodesicBoundary<T> where BoundaryPoint<T>: PartialEq {}
+impl<T> Eq for GeodesicBoundary<T> where GeodesicBoundary<T>: PartialEq {}
 impl<T> Copy for GeodesicBoundary<T> where T: Copy {}
 impl<T> Clone for GeodesicBoundary<T>
 where
