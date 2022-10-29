@@ -81,27 +81,6 @@ pub struct TangencyCircle<T> {
     diameter: T,
 }
 
-// impl<T> PartialEq for TangencyCircle<T>
-// where
-//     T: PartialEq,
-// {
-//     fn eq(&self, other: &Self) -> bool {
-//         self.boundary == other.boundary && self.diameter == other.diameter
-//     }
-// }
-// impl<T> Eq for TangencyCircle<T> where TangencyCircle<T>: PartialEq {}
-// impl<T> Clone for TangencyCircle<T>
-// where
-//     T: Clone,
-// {
-//     fn clone(&self) -> TangencyCircle<T> {
-//         TangencyCircle {
-//             boundary: self.boundary.clone(),
-//             diameter: self.diameter.clone(),
-//         }
-//     }
-// }
-
 impl<T> From<&TangencyCircle<T>> for EuclideanCircle<T>
 where
     T: Clone + Mid + AddIdentity,
@@ -113,37 +92,6 @@ where
         EuclideanCircle { center, radius }
     }
 }
-
-// impl<T> PartialEq for GeometricHorocCycle<T>
-// where
-//     TangencyCircle<T>: PartialEq,
-//     T: PartialEq,
-// {
-//     fn eq(&self, other: &Self) -> bool {
-//         match (self, other) {
-//             (GeometricHorocCycle::Line(t), GeometricHorocCycle::Line(s)) => s == t,
-//             (GeometricHorocCycle::TangencyCircle(t), GeometricHorocCycle::TangencyCircle(s)) => {
-//                 s == t
-//             }
-//             _ => false,
-//         }
-//     }
-// }
-// impl<T> Eq for GeometricHorocCycle<T> where GeometricHorocCycle<T>: PartialEq {}
-// impl<T> Clone for GeometricHorocCycle<T>
-// where
-//     T: Clone,
-//     TangencyCircle<T>: Clone,
-// {
-//     fn clone(&self) -> GeometricHorocCycle<T> {
-//         match self {
-//             GeometricHorocCycle::Line(t) => GeometricHorocCycle::Line(t.clone()),
-//             GeometricHorocCycle::TangencyCircle(t) => {
-//                 GeometricHorocCycle::TangencyCircle(t.clone())
-//             }
-//         }
-//     }
-// }
 
 /// Implement Action for Moebius transformations on the boundary.
 impl<T> Action<GeometricHorocCycle<T>> for MoebiusTransformation<T>
@@ -160,7 +108,7 @@ where
                     if (self.a + (-self.d)).is_zero(Some(NUMERIC_THRESHOLD)) {
                         GeometricHorocCycle::Line(*t)
                     } else {
-                        // let other_fixed_point = self.a * self.b  / (1 - self.a * self.a);
+                        // other_fixed_point = self.a * self.b  / (1 - self.a * self.a);
                         let height = self.a * self.a * *t;
                         GeometricHorocCycle::Line(height)
                     }

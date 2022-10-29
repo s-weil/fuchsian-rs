@@ -81,6 +81,7 @@ where
 
 /// Geodesics of the upper half plane (within C).
 /// SpecialLinear preserves the boundary (maps geodesics to geodesics).
+#[derive(Debug, PartialEq, Eq)]
 pub enum GeodesicLine<T> {
     /// A half-circle with center on the real axis within C
     Arc(EuclideanArc<T>),
@@ -88,34 +89,12 @@ pub enum GeodesicLine<T> {
     Line(T), // touchpoint
 }
 
-impl<T> PartialEq for GeodesicLine<T>
-where
-    T: PartialEq,
-{
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (GeodesicLine::Line(t1), GeodesicLine::Line(t2)) => t1 == t2,
-            (GeodesicLine::Arc(a1), GeodesicLine::Arc(a2)) => a1 == a2,
-            _ => false,
-        }
-    }
-}
-
 /// The parametrization of a geodesic line in case of an arc.
+#[derive(Debug, PartialEq, Eq)]
 pub struct EuclideanArc<T> {
     pub center: T,
     pub radius: T,
 }
-
-impl<T> PartialEq for EuclideanArc<T>
-where
-    T: PartialEq,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.center == other.center && self.radius == other.radius
-    }
-}
-impl<T> Eq for EuclideanArc<T> where T: PartialEq {}
 
 impl<T> EuclideanArc<T> {
     pub fn from_antipodal(p1: T, p2: T) -> Self
@@ -153,7 +132,7 @@ impl Drawable2d<f64> for GeodesicLine<f64> {
     fn draw(&self, n_curve_points: usize) -> Vec<(f64, f64)> {
         match self {
             GeodesicLine::Line(b) => {
-                vec![(*b, 0.0), (*b, 2.0 as f64)]
+                vec![(*b, 0.0), (*b, 2.0_f64)]
             }
             GeodesicLine::Arc(arc) => draw_euclidean_arc(arc.center, arc.radius, n_curve_points),
         }

@@ -11,24 +11,12 @@ use std::{
 
 /// Boundary points of the hyperbolic (Poincare) upper half plane (within C).
 /// SpecialLinear preserves the boundary (maps boundary points to the boundary).
+#[derive(PartialEq, Eq, Clone)]
 pub enum BoundaryPoint<T> {
     Infinity,
     Regular(T),
 }
 
-impl<T> PartialEq for BoundaryPoint<T>
-where
-    T: PartialEq,
-{
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (BoundaryPoint::Infinity, BoundaryPoint::Infinity) => true,
-            (BoundaryPoint::Regular(t1), BoundaryPoint::Regular(t2)) => t1 == t2,
-            _ => false,
-        }
-    }
-}
-impl<T> Eq for BoundaryPoint<T> where T: PartialEq {}
 impl<T> Display for BoundaryPoint<T>
 where
     T: Display,
@@ -52,17 +40,6 @@ where
     }
 }
 impl<T> Copy for BoundaryPoint<T> where T: Copy {}
-impl<T> Clone for BoundaryPoint<T>
-where
-    T: Clone,
-{
-    fn clone(&self) -> BoundaryPoint<T> {
-        match self {
-            BoundaryPoint::Infinity => BoundaryPoint::Infinity,
-            BoundaryPoint::Regular(t) => BoundaryPoint::Regular(t.clone()),
-        }
-    }
-}
 
 /// Implement Action for Moebius transformations on the boundary.
 impl<T> Action<BoundaryPoint<T>> for MoebiusTransformation<T>
