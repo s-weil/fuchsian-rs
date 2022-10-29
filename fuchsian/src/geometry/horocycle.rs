@@ -16,6 +16,7 @@ use std::ops::Div;
 /// For simplicity we avoid this definition and use of the geometric outcomes in the (Poincare) upper half plane (within C), namely:
 /// - $H_t$, a line parallel to the real axis at Euclidean height $t$ corresponding to the level set $Im(z) = t$, or,
 /// - an Eucldiean circle tangent to the real axis
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum GeometricHorocCycle<T> {
     /// A half-circle with center on the real axis within C
     TangencyCircle(TangencyCircle<T>),
@@ -24,8 +25,21 @@ pub enum GeometricHorocCycle<T> {
 }
 
 impl<T> GeometricHorocCycle<T> {
-    pub fn new(t: T) -> Self {
-        Self::Line(t)
+    pub fn new(boundary: BoundaryPoint<T>, height_or_diam: T) -> Self {
+        // if height_or_diam <= 0.0 {
+        //     panic!("Provided non-positive height or diameter");
+        // }
+        match boundary {
+            BoundaryPoint::Infinity => GeometricHorocCycle::Line(height_or_diam),
+            BoundaryPoint::Regular(t) => GeometricHorocCycle::TangencyCircle(TangencyCircle {
+                boundary: t,
+                diameter: height_or_diam,
+            }),
+        }
+    }
+
+    pub fn new_line(t: T) -> Self {
+        Self::new(BoundaryPoint::Infinity, t)
     }
 
     pub fn boundary_point(&self) -> BoundaryPoint<T>
@@ -39,6 +53,16 @@ impl<T> GeometricHorocCycle<T> {
             }
         }
     }
+
+    pub fn height_or_diameter(&self) -> T
+    where
+        T: Copy,
+    {
+        match self {
+            GeometricHorocCycle::Line(t) => *t,
+            GeometricHorocCycle::TangencyCircle(TangencyCircle { diameter, .. }) => *diameter,
+        }
+    }
 }
 
 impl<T> Default for GeometricHorocCycle<T>
@@ -50,32 +74,33 @@ where
     }
 }
 
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct TangencyCircle<T> {
     /// The `touchpoint` at infinity.
     boundary: T,
     diameter: T,
 }
 
-impl<T> PartialEq for TangencyCircle<T>
-where
-    T: PartialEq,
-{
-    fn eq(&self, other: &Self) -> bool {
-        self.boundary == other.boundary && self.diameter == other.diameter
-    }
-}
-impl<T> Eq for TangencyCircle<T> where TangencyCircle<T>: PartialEq {}
-impl<T> Clone for TangencyCircle<T>
-where
-    T: Clone,
-{
-    fn clone(&self) -> TangencyCircle<T> {
-        TangencyCircle {
-            boundary: self.boundary.clone(),
-            diameter: self.diameter.clone(),
-        }
-    }
-}
+// impl<T> PartialEq for TangencyCircle<T>
+// where
+//     T: PartialEq,
+// {
+//     fn eq(&self, other: &Self) -> bool {
+//         self.boundary == other.boundary && self.diameter == other.diameter
+//     }
+// }
+// impl<T> Eq for TangencyCircle<T> where TangencyCircle<T>: PartialEq {}
+// impl<T> Clone for TangencyCircle<T>
+// where
+//     T: Clone,
+// {
+//     fn clone(&self) -> TangencyCircle<T> {
+//         TangencyCircle {
+//             boundary: self.boundary.clone(),
+//             diameter: self.diameter.clone(),
+//         }
+//     }
+// }
 
 impl<T> From<&TangencyCircle<T>> for EuclideanCircle<T>
 where
@@ -89,36 +114,36 @@ where
     }
 }
 
-impl<T> PartialEq for GeometricHorocCycle<T>
-where
-    TangencyCircle<T>: PartialEq,
-    T: PartialEq,
-{
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (GeometricHorocCycle::Line(t), GeometricHorocCycle::Line(s)) => s == t,
-            (GeometricHorocCycle::TangencyCircle(t), GeometricHorocCycle::TangencyCircle(s)) => {
-                s == t
-            }
-            _ => false,
-        }
-    }
-}
-impl<T> Eq for GeometricHorocCycle<T> where GeometricHorocCycle<T>: PartialEq {}
-impl<T> Clone for GeometricHorocCycle<T>
-where
-    T: Clone,
-    TangencyCircle<T>: Clone,
-{
-    fn clone(&self) -> GeometricHorocCycle<T> {
-        match self {
-            GeometricHorocCycle::Line(t) => GeometricHorocCycle::Line(t.clone()),
-            GeometricHorocCycle::TangencyCircle(t) => {
-                GeometricHorocCycle::TangencyCircle(t.clone())
-            }
-        }
-    }
-}
+// impl<T> PartialEq for GeometricHorocCycle<T>
+// where
+//     TangencyCircle<T>: PartialEq,
+//     T: PartialEq,
+// {
+//     fn eq(&self, other: &Self) -> bool {
+//         match (self, other) {
+//             (GeometricHorocCycle::Line(t), GeometricHorocCycle::Line(s)) => s == t,
+//             (GeometricHorocCycle::TangencyCircle(t), GeometricHorocCycle::TangencyCircle(s)) => {
+//                 s == t
+//             }
+//             _ => false,
+//         }
+//     }
+// }
+// impl<T> Eq for GeometricHorocCycle<T> where GeometricHorocCycle<T>: PartialEq {}
+// impl<T> Clone for GeometricHorocCycle<T>
+// where
+//     T: Clone,
+//     TangencyCircle<T>: Clone,
+// {
+//     fn clone(&self) -> GeometricHorocCycle<T> {
+//         match self {
+//             GeometricHorocCycle::Line(t) => GeometricHorocCycle::Line(t.clone()),
+//             GeometricHorocCycle::TangencyCircle(t) => {
+//                 GeometricHorocCycle::TangencyCircle(t.clone())
+//             }
+//         }
+//     }
+// }
 
 /// Implement Action for Moebius transformations on the boundary.
 impl<T> Action<GeometricHorocCycle<T>> for MoebiusTransformation<T>
@@ -156,8 +181,7 @@ where
                     let one: T = MulIdentity::one();
                     GeometricHorocCycle::Line(one / h)
                 } else {
-                    let denom = self.c * circle.boundary + self.d;
-                    let diameter = circle.diameter / (denom * denom); // TODO: not correct
+                    let diameter = circle.diameter / (denom * denom); // TODO: check if correct
                     let boundary = (self.a * circle.boundary + self.b) / denom;
                     let circle = TangencyCircle { boundary, diameter };
                     GeometricHorocCycle::TangencyCircle(circle)
@@ -181,5 +205,90 @@ impl Drawable2d<f64> for GeometricHorocCycle<f64> {
                 eucl_circle.draw(n_curve_points)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        geometry::{boundary::BoundaryPoint, horocycle::GeometricHorocCycle},
+        group_action::Action,
+        moebius::MoebiusTransformation,
+    };
+    use approx::assert_abs_diff_eq;
+
+    #[test]
+    fn test_action_horocyclic() {
+        let h = MoebiusTransformation::<f64>::new(1.0, 10.0, 0.0, 1.0);
+        let dflt_horocycle = GeometricHorocCycle::default();
+        let mapped_hc = h.map(&dflt_horocycle);
+        assert_eq!(mapped_hc, dflt_horocycle);
+
+        let h_inv = h.inverse(None).unwrap();
+        let remapped_hc = h_inv.map(&mapped_hc);
+        assert_eq!(remapped_hc, dflt_horocycle);
+
+        let tang_hc = GeometricHorocCycle::new(BoundaryPoint::Regular(0.0), 1.0);
+        let mapped_hc = h.map(&tang_hc);
+        assert_eq!(
+            mapped_hc,
+            GeometricHorocCycle::new(BoundaryPoint::Regular(10.0), 1.0)
+        );
+    }
+
+    #[test]
+    fn test_action_elliptic() {
+        let h = MoebiusTransformation::<f64>::new(0.0, -1.0, 1.0, 0.0);
+        let dflt_horocycle = GeometricHorocCycle::default();
+        let mapped_hc = h.map(&dflt_horocycle);
+        assert_ne!(mapped_hc, dflt_horocycle);
+        assert_eq!(mapped_hc.boundary_point(), BoundaryPoint::Regular(0.0));
+
+        let h_inv = h.inverse(None).unwrap();
+        let remapped_hc = h_inv.map(&mapped_hc);
+        assert_eq!(remapped_hc, dflt_horocycle);
+
+        let tang_hc = GeometricHorocCycle::new(BoundaryPoint::Regular(0.0), 1.0);
+        let mapped_hc = h.map(&tang_hc);
+        assert_eq!(mapped_hc, GeometricHorocCycle::default());
+    }
+
+    #[test]
+    fn test_action_hyperbolic() {
+        let h = MoebiusTransformation::<f64>::new(5.0, 0.0, 0.0, 0.2);
+        let h_inv = h.inverse(None).unwrap();
+
+        let dflt_horocycle = GeometricHorocCycle::default();
+        let mapped_hc = h.map(&dflt_horocycle);
+        assert_eq!(mapped_hc, GeometricHorocCycle::Line(25.0));
+
+        let remapped_hc = h_inv.map(&mapped_hc);
+        assert_eq!(
+            remapped_hc.boundary_point(),
+            dflt_horocycle.boundary_point()
+        );
+        assert_abs_diff_eq!(
+            remapped_hc.height_or_diameter(),
+            dflt_horocycle.height_or_diameter(),
+            epsilon = f64::EPSILON
+        );
+
+        let tang_hc = GeometricHorocCycle::new(BoundaryPoint::Regular(0.0), 1.0);
+        let mapped_hc = h.map(&tang_hc);
+        assert_eq!(mapped_hc.boundary_point(), BoundaryPoint::Regular(0.0));
+        assert_abs_diff_eq!(mapped_hc.height_or_diameter(), 25.0, epsilon = 1e-12);
+
+        let remapped_hc = h_inv.map(&mapped_hc);
+        assert_eq!(remapped_hc.boundary_point(), BoundaryPoint::Regular(0.0));
+        assert_abs_diff_eq!(remapped_hc.height_or_diameter(), 1.0, epsilon = 1e-12);
+
+        let tang_hc = GeometricHorocCycle::new(BoundaryPoint::Regular(1.0), 1.0);
+        let mapped_hc = h.map(&tang_hc);
+        assert_eq!(mapped_hc.boundary_point(), BoundaryPoint::Regular(25.0));
+        assert_ne!(mapped_hc.height_or_diameter(), 25.0);
+        // TODO: what is the diameter?
+        let remapped_hc = h_inv.map(&mapped_hc);
+        assert_eq!(remapped_hc.boundary_point(), BoundaryPoint::Regular(1.0));
+        assert_abs_diff_eq!(remapped_hc.height_or_diameter(), 1.0, epsilon = 1e-12);
     }
 }

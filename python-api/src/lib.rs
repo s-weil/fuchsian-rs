@@ -34,7 +34,7 @@ fn parse_geodesic_boundary((start, end): (f64, f64)) -> GeodesicBoundary<f64> {
 }
 
 fn parse_horocycle(euclidean_height: f64) -> GeometricHorocCycle<f64> {
-    GeometricHorocCycle::new(euclidean_height)
+    GeometricHorocCycle::new_line(euclidean_height)
 }
 
 fn plot_geodesic(geodesic_boundary: GeodesicBoundary<f64>, n_curve_pts: usize) -> Vec<(f64, f64)> {

@@ -131,7 +131,7 @@ mod tests {
         assert_eq!(h.map(&boundary_regular), BoundaryPoint::Regular(-25.0));
     }
 
-    // TODO: incorrect
+    // TODO: incorrect?
     #[test]
     fn test_action_rotation() {
         // no fixed points
