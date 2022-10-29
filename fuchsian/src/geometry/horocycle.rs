@@ -150,21 +150,17 @@ where
                 }
             }
             GeometricHorocCycle::TangencyCircle(circle) => {
-                // TODO: do it similar with c or denom?
-                let mapped_boundary = self.map(&x.boundary_point());
-                match mapped_boundary {
-                    BoundaryPoint::Infinity => {
-                        let h = circle.diameter * self.c * self.c;
-                        let one: T = MulIdentity::one();
-                        GeometricHorocCycle::Line(one / h)
-                    }
-                    BoundaryPoint::Regular(boundary) => {
-                        // case denom != 0
-                        let denom = self.c * circle.boundary + self.d;
-                        let diameter = circle.diameter / (denom * denom); // TODO: correct?
-                        let circle = TangencyCircle { boundary, diameter };
-                        GeometricHorocCycle::TangencyCircle(circle)
-                    }
+                let denom = self.c * circle.boundary + self.d;
+                if denom.is_zero(Some(NUMERIC_THRESHOLD)) {
+                    let h = circle.diameter * self.c * self.c;
+                    let one: T = MulIdentity::one();
+                    GeometricHorocCycle::Line(one / h)
+                } else {
+                    let denom = self.c * circle.boundary + self.d;
+                    let diameter = circle.diameter / (denom * denom); // TODO: not correct
+                    let boundary = (self.a * circle.boundary + self.b) / denom;
+                    let circle = TangencyCircle { boundary, diameter };
+                    GeometricHorocCycle::TangencyCircle(circle)
                 }
             }
         }
