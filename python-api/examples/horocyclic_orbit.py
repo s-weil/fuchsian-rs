@@ -1,21 +1,21 @@
-import python_api
+import python_api as fuchsian
 import plotly.graph_objects as go
 
 ###########################
 ###### MODULAR GROUP ######
 
-horocyclic = python_api.moebius_matrix(1.0, 1.0, 0.0, 1.0)
+horocyclic = fuchsian.moebius_matrix(1.0, 1.0, 0.0, 1.0)
 print(horocyclic)
 
-elliptic= python_api.moebius_matrix(0.0, -1.0, 1.0, 0.0)
+elliptic= fuchsian.moebius_matrix(0.0, -1.0, 1.0, 0.0)
 print(elliptic)
 
-# modular_group = [horocyclic, elliptic]
-modular_group = [horocyclic, elliptic, elliptic, horocyclic]
+modular_group = [horocyclic, elliptic]
+# modular_group = [horocyclic, elliptic, elliptic, horocyclic]
 
 # Euclidean height
 horocycle_height = 2.0
-horocyclic_orbit = python_api.horocyclic_orbit(modular_group, horocycle_height, 100, 30, "sequential")
+horocyclic_orbit = fuchsian.horocyclic_orbit(modular_group, horocycle_height, 100, 30, "sequential")
 print("generated horocyclic orbit")
 
 
@@ -39,12 +39,12 @@ fig.show()
 ###### HYPERBOLIC #########
 
 # hyperbolic has 2 fixed points on the boundary, 0 and infty
-hyperbolic = python_api.moebius_matrix(5.0, 0.0, 0.0, 0.2)
+hyperbolic = fuchsian.moebius_matrix(5.0, 0.0, 0.0, 0.2)
 single_group = [ hyperbolic ]
 
 # Euclidean height
 horocycle_height = 1.0
-horocyclic_orbit = python_api.horocyclic_orbit(single_group, horocycle_height, 100, 30, "sequential")
+horocyclic_orbit = fuchsian.horocyclic_orbit(single_group, horocycle_height, 100, 30, "sequential")
 print("generated horocyclic orbit")
 
 ###### PLOTTING ######

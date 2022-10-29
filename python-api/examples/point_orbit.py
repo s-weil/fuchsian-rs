@@ -1,16 +1,16 @@
-import python_api
+import python_api as fuchsian
 
-
-horocyclic = python_api.moebius_matrix(1.0, 1.0, 0.0, 1.0)
+horocyclic = fuchsian.moebius_matrix(1.0, 1.0, 0.0, 1.0)
 print(horocyclic)
 
-elliptic= python_api.moebius_matrix(0.0, -1.0, 1.0, 0.0)
+elliptic= fuchsian.moebius_matrix(0.0, -1.0, 1.0, 0.0)
 print(elliptic)
 
 modular_group = [horocyclic, elliptic]
 
 base_point = (1.0, 0.0) # Note that i = (0, 1) is a singularity of the modular group
-orbit = python_api.orbit(modular_group, base_point, 100_000, "random")
+# orbit = fuchsian.orbit(modular_group, base_point, 100_000, "random")
+orbit = fuchsian.orbit(modular_group, base_point, 100_000, "sequential")
 print("generated orbit")
 
 
