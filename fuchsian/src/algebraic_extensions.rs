@@ -121,18 +121,18 @@ pub trait Group: PartialEq + Sized {
     }
 }
 
-/// Implement Group for Wrapper types containing a group as element
-impl<M, S> Group for M
+/// Implement Group for Wrapper types containing a group as element.
+impl<W, I> Group for W
 where
-    S: Group,
-    M: Wrapper<Inner = S> + PartialEq + Sized,
+    I: Group,
+    W: Wrapper<Inner = I> + PartialEq + Sized,
 {
     fn combine(&self, other: &Self) -> Self {
         self.deref().combine(other.deref()).into()
     }
 
     fn identity() -> Self {
-        S::identity().into()
+        I::identity().into()
     }
 
     fn inv(&self) -> Self {

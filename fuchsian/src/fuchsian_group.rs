@@ -226,7 +226,6 @@ where
     }
 }
 
-// TODO: move this to moebius?
 /// Implement Action for float types on the complex plane.
 impl<T> Action<Complex<T>> for MoebiusTransformation<T>
 where
@@ -410,7 +409,7 @@ mod tests {
         assert_eq!(fuchsian_group.generators.len(), 3);
 
         let base_point = Complex64::new(1.0, 1.0);
-        let orbit = Orbit::create(&fuchsian_group, &base_point, 100, None);
+        let orbit = Orbit::sample(&fuchsian_group, &base_point, 100, None);
 
         assert_eq!(orbit.points.len(), 100);
 
@@ -433,7 +432,7 @@ mod tests {
         assert_eq!(fuchsian_group.generators.len(), 2);
 
         let base_point = Complex::<i32>::new(1, 0);
-        let orbit = Orbit::create(&fuchsian_group, &base_point, 100, None);
+        let orbit = Orbit::sample(&fuchsian_group, &base_point, 100, None);
 
         assert_eq!(orbit.points.len(), 100);
 
@@ -449,7 +448,7 @@ mod tests {
         assert_eq!(fuchsian_group.generators.len(), 2);
 
         let base_point = Complex::<f32>::new(1.0, 0.0);
-        let orbit = Orbit::create(&fuchsian_group, &base_point, 100, None);
+        let orbit = Orbit::sample(&fuchsian_group, &base_point, 100, None);
 
         assert_eq!(orbit.points.len(), 100);
 

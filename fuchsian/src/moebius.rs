@@ -4,6 +4,7 @@ use crate::{
     },
     group_action::{Determinant, SpecialLinear},
     set_extensions::SetRestriction,
+    NUMERIC_THRESHOLD,
 };
 use std::{
     fmt,
@@ -249,9 +250,6 @@ where
     }
 }
 
-// TODO: move
-pub const DEFAULT_THRESHOLD: f64 = 1e-16;
-
 impl<T> Inverse for MoebiusTransformation<T>
 where
     T: Numeric + NumericAddIdentity + std::marker::Copy + Div<Output = T>,
@@ -259,7 +257,7 @@ where
     type Error = &'static str;
 
     fn inverse(&self) -> std::result::Result<Self, Self::Error> {
-        if let Some(m) = self.inverse(Some(DEFAULT_THRESHOLD)) {
+        if let Some(m) = self.inverse(Some(NUMERIC_THRESHOLD)) {
             return Ok(m);
         }
         Err("Moebius transformation is not invertible. Determinant smaller than 1e-16")

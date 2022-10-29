@@ -1,4 +1,7 @@
 [workspace] 
 members = [
-    "fuchsian"
+    "fuchsian",
+    "python-api"
 ]
+
+#default-members = ["fuchsian"]

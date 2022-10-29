@@ -9,6 +9,7 @@ description = "Fuchsian and hyperbolic geometry"
 
 [dependencies]
 num-complex = "0.4"
+rand = "0.8.5"
 
 [dev-dependencies]
 approx = "0.5.1"
