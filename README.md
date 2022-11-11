@@ -5,7 +5,7 @@ In particular we focus on orbits of finitely generated subgroups of <i>PSL(2, R)
 
 We provide several ways of visualizing orbits of group actions, namey via
 - [python api](./python-api/README.md) (see [examples](./python-api/examples))
-- Bevy (TODO)
+- interactive UI with yew (TODO)
 - raw data exports (TODO)
 
 
@@ -21,12 +21,12 @@ fuchsian orbit of a horocycle (created with the [python-api](./python-api/exampl
 
 ### Related work and background reading
 
-We refer to related work (to our knowledge)
+We refer to the related work (existing to our knowledge)
 - [Slview](https://github.com/daviddumas/slview)
 - [hyperbolic](https://github.com/cduck/hyperbolic)
 - ...
 
-For further reading of background
+For further reading and background
 - [F. Dal'bo - Geodesic and Horocyclic Trajectories](https://link.springer.com/book/10.1007/978-0-85729-073-1)
 - [M. Einsieder, T. Ward - Ergodic Theory](https://link.springer.com/book/10.1007/978-0-85729-021-2)
 
